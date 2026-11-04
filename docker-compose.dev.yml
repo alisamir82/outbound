@@ -1,0 +1,12 @@
+# Local development: only the databases. Run the app with `pnpm dev` and the worker with `pnpm worker`.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    ports: ["5432:5432"]
+    environment: { POSTGRES_USER: outbound, POSTGRES_PASSWORD: outbound, POSTGRES_DB: outbound }
+    volumes: [pg_dev:/var/lib/postgresql/data]
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+volumes:
+  pg_dev:
