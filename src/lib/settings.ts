@@ -14,7 +14,8 @@ export type IntegrationKey =
   | "anthropic"
   | "apollo"
   | "google_calendar"
-  | "microsoft_calendar";
+  | "microsoft_calendar"
+  | "compliance";
 
 export type IntegrationField = {
   name: string;
@@ -92,6 +93,16 @@ export const INTEGRATIONS: Record<IntegrationKey, { title: string; description: 
       { name: "clientSecret", label: "Client secret", type: "secret" },
     ],
   },
+  compliance: {
+    title: "Compliance defaults",
+    description: "Platform-wide rules applied on top of each client's own settings.",
+    fields: [
+      { name: "blockedRegions", label: "Blocked countries (ISO codes, comma-separated)", type: "text", help: "Leads from these countries are never sourced, e.g. CA, DE where cold email is restricted." },
+      { name: "retentionDays", label: "Default data retention (days)", type: "number", help: "Unengaged leads older than this are deleted. Clients can set a shorter window." },
+      { name: "webhookRetentionDays", label: "Raw webhook retention (days)", type: "number" },
+      { name: "budgetAlertPercent", label: "Budget alert threshold (%)", type: "number", help: "Alert the agency when a client passes this share of its monthly AI budget." },
+    ],
+  },
   anthropic: {
     title: "Anthropic (Claude)",
     description: "Platform-wide API key. Usage is metered per client.",
@@ -119,6 +130,7 @@ export const INTEGRATION_DEFAULTS: Record<IntegrationKey, Record<string, unknown
   instantly: { enabled: false },
   google_calendar: {},
   microsoft_calendar: {},
+  compliance: { blockedRegions: "", retentionDays: 365, webhookRetentionDays: 90, budgetAlertPercent: 80 },
   anthropic: { mode: "mock", defaultModel: "claude-opus-5-5", cheapModel: "claude-haiku-5-5" },
 };
 

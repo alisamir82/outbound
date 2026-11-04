@@ -304,7 +304,7 @@ Estimates assume one senior full-stack engineer plus one engineer for AI/integra
 - Guardrails and autonomous toggle (shipped off by default).
 - **Exit:** Pilot client handles all replies inside the platform; first meeting booked by the agent.
 
-### Phase 3 — Reporting, optimisation, hardening (weeks 9–10)
+### Phase 3 — Reporting, optimisation, hardening (weeks 9–10) — done
 - Analytics sync, email-health monitoring and alerts.
 - Weekly report (in-app + email) and optimisation proposals with approval.
 - Token budgets, spend dashboard, eval suite in CI.

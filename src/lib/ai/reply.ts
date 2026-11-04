@@ -2,6 +2,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import type { Client, Lead, Message, ProposedSlot, ReplyClassification } from "@/db/schema";
 import type { KbHit } from "@/lib/kb/search";
+import { classifyMock } from "./classify";
 import { getAi } from "./client";
 import { runAgent } from "./run";
 import { resolveSkill } from "./skills";
@@ -77,20 +78,7 @@ function mockReply(ctx: ReplyContext): ReplyAgentOutput {
   const sender = ctx.client.replySettings.senderName || "the team";
   const sign = `\n\n${sender.split(" ")[0]}`;
   const has = (...w: string[]) => w.some((x) => t.includes(x));
-  const rules: [ReplyClassification, number, string[]][] = [
-    ["unsubscribe", 0.97, ["unsubscribe", "remove me", "stop emailing", "opt out", "do not contact", "don't contact"]],
-    ["hostile", 0.9, ["spam", "lawyer", "legal action", "harass", "report you"]],
-    ["out_of_office", 0.95, ["out of office", "away until", "on leave", "automatic reply"]],
-    ["wrong_person", 0.85, ["not the right person", "wrong person", "speak to", "talk to my colleague", "forward"]],
-    ["not_now", 0.85, ["next quarter", "later this year", "circle back", "not right now", "in a few months"]],
-    ["question", 0.55, ["price", "pricing", "discount", "contract", "cost"]],
-    ["objection", 0.75, ["competitor", "already use", "in-house", "no budget", "not a priority"]],
-    ["interested", 0.92, ["interested", "call", "demo", "tell me more", "sounds good", "let's talk", "book", "meeting"]],
-    ["question", 0.7, ["?"]],
-  ];
-  const matched = rules.find(([, , words]) => has(...words));
-  const classification: ReplyClassification = matched?.[0] ?? "other";
-  const confidence = matched?.[1] ?? 0.6;
+  const { classification, confidence } = classifyMock(ctx.inbound.bodyText);
 
   const slotIdx = ctx.slots.findIndex((s) => has(s.label.split(",")[0].toLowerCase()));
   const kb = ctx.kbHits[0];

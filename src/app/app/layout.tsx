@@ -13,6 +13,7 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
     { href: "/app/leads", label: "Leads" },
     { href: "/app/campaigns", label: "Campaigns" },
     { href: "/app/inbox", label: "Inbox" },
+    { href: "/app/reports", label: "Reports" },
     { href: "/app/knowledge", label: "Knowledge base" },
     { href: "/app/settings/replies", label: "Reply settings" },
     { href: "/app/settings/skills", label: "AI skills" },

@@ -4,6 +4,7 @@ import type { LeadRun } from "@/db/schema";
 import { qualifyLeads } from "@/lib/ai/qualify";
 import { resolveLeadSource, resolveVerifier } from "@/lib/leads/registry";
 import { getIntegration } from "@/lib/settings";
+import { platformBlockedRegions } from "./compliance";
 
 /**
  * Lead-run pipeline: source → dedupe → verify → qualify → review.
@@ -36,9 +37,14 @@ export async function processLeadRun(leadRunId: string) {
     const cap = Number(sourceCfg.dailyCreditCap ?? 500);
     const limit = Math.min(run.requestedCount, cap);
 
+    const client = await db.query.clients.findFirst({ where: eq(schema.clients.id, run.clientId), columns: { blockedRegions: true } });
+    const blocked = new Set([...(client?.blockedRegions ?? []), ...(await platformBlockedRegions())].map((r) => r.toUpperCase()));
+
     const source = await resolveLeadSource();
     const sourced = await source.search({ icp: run.icp.spec, limit, exclude });
-    const deduped = sourced.filter((l) => !exclude.has(l.email.toLowerCase()) && !suppressedDomains.has((l.domain ?? "").toLowerCase()));
+    const deduped = sourced.filter(
+      (l) => !exclude.has(l.email.toLowerCase()) && !suppressedDomains.has((l.domain ?? "").toLowerCase()) && !blocked.has((l.country ?? "").toUpperCase()),
+    );
 
     if (deduped.length === 0) {
       await setStatus("review", { counts: { sourced: sourced.length, deduped: 0, verified: 0, qualified: 0, pushed: 0 }, finishedAt: new Date() });

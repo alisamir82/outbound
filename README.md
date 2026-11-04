@@ -7,7 +7,25 @@ Agency-operated outbound sales platform with Claude at the centre: ICP + lead ge
 **Phase 0 (foundation) – done.** Auth, roles, tenancy, admin portal (clients, users, integrations), client portal shell, worker skeleton, Docker/VPS deployment.
 **Phase 1 (lead generation) – done.** ICP builder, lead-run pipeline (source → dedupe → verify → qualify → review), campaign copywriter with approval, push to Instantly, per-client skill overrides, AI metering and budgets.
 **Phase 2 (replies) – done.** Instantly webhook receiver, threads and inbox, reply agent with classification and knowledge-base grounding, one-click approval, autonomous mode with guardrails, meeting booking via Google / Microsoft / booking link, knowledge base (PDF, DOCX, PPTX, TXT, MD, URL) with full-text retrieval.
-Next: Phase 3 (analytics sync, email health, weekly reports, optimisation proposals, eval suite, compliance jobs).
+**Phase 3 (reporting and operations) – done.** Hourly analytics sync and daily email-account health from Instantly with alerts, weekly report (in-app and emailed) with Claude narrative, optimisation proposals with approve-and-apply, per-client AI spend dashboard and budget alerts, region blocking and data-retention jobs, reply-classification eval suite and GitHub Actions CI.
+
+MVP scope from the implementation plan is complete. Remaining work is live-credential verification (see "Before going live") and the post-MVP backlog (Connected adapter, Slack notifications, A/B testing, Instantly sub-workspaces).
+
+### Reporting and operations
+
+- **Scheduled jobs** (BullMQ job schedulers, registered by the worker): analytics sync hourly, email health daily 06:15 UTC, weekly report tick hourly (each client gets its report on its local Monday between 07:00 and 09:00), budget check hourly, retention daily 03:30 UTC.
+- **Alerts** are raised once per condition and stay until dismissed: bounce rate over 5% on a campaign, sending-account warm-up or bounce problems, budget threshold and exhaustion, analytics sync failures. Client alerts show on the client dashboard; platform alerts on the admin overview and Email health pages.
+- **Optimisation proposals** are generated with each weekly report for live campaigns; each changes one subject line, body, delay or ICP targeting field. Approving applies it to the campaign (and to Instantly in live mode).
+- **Compliance**: Admin → Integrations → Compliance defaults holds platform-wide blocked countries, retention windows and the budget alert threshold; each client can add blocked countries and a shorter retention window.
+- **Eval suite**: `pnpm test` runs guardrail unit tests and the reply-classification eval against the keyword mock; with `ANTHROPIC_API_KEY` set it also runs against the real model (`EVAL_MODEL` overrides the default Haiku). CI runs on every pull request.
+
+### Before going live
+
+1. Set the Anthropic key (Mode = Live) and the Instantly key + webhook secret under Admin → Integrations.
+2. Register Instantly webhooks for reply, unsubscribe, bounce, sent and opened events.
+3. Confirm Instantly field names on one real campaign push, one reply send, one analytics pull and one accounts listing (all isolated in `src/lib/instantly/client.ts`).
+4. Create Google and Microsoft OAuth apps and add their credentials; connect the pilot client's calendar.
+5. Rotate the seeded passwords.
 
 ### Replies and the inbox
 
@@ -61,6 +79,7 @@ Seeded logins (change in production):
 | `pnpm db:migrate` | Apply migrations |
 | `pnpm db:studio` | Browse the database |
 | `pnpm db:seed` | Idempotent seed |
+| `pnpm test` | Guardrail tests + reply-classification eval (live model when `ANTHROPIC_API_KEY` is set) |
 
 ## Layout
 
@@ -73,6 +92,9 @@ src/lib/ai/            Anthropic client, skills (prompts + overrides), metering,
 src/lib/pipeline/      Lead-run and campaign processors (run by the worker)
 src/lib/instantly/     Instantly v2 adapter (live + mock)
 src/lib/replies/       Reply agent orchestration, guardrails, send/book/unsubscribe
+src/lib/pipeline/      Lead runs, campaigns, inbox, KB, analytics, health, reports, compliance (worker processors)
+src/lib/alerts.ts      Deduplicated alert raising/clearing
+tests/eval/            Guardrail unit tests and the reply-classification eval set
 src/lib/kb/            Knowledge base: extraction (pdf/docx/pptx/url), chunking, full-text search
 src/lib/calendar/      Google / Microsoft / mock calendar providers, OAuth, slot proposals
 src/lib/queue.ts       Typed BullMQ job names shared by app and worker

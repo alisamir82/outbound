@@ -31,6 +31,12 @@ export function ClientFields({ client }: { client?: Client }) {
       <Field label="Instantly workspace ID" help="Optional. Set when the agency plan provides sub-workspaces.">
         <Input name="instantlyWorkspaceId" defaultValue={client?.instantlyWorkspaceId ?? ""} />
       </Field>
+      <Field label="Blocked countries" help="ISO codes, comma-separated. Leads from these countries are never sourced for this client.">
+        <Input name="blockedRegions" defaultValue={client?.blockedRegions.join(", ") ?? ""} placeholder="CA, DE" />
+      </Field>
+      <Field label="Data retention (days)" help="Unengaged leads older than this are deleted. 0 = platform default.">
+        <Input name="dataRetentionDays" type="number" min={0} max={3650} defaultValue={client?.dataRetentionDays ?? 365} />
+      </Field>
       {client ? (
         <Field label="Status">
           <Select name="status" defaultValue={client.status}>

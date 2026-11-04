@@ -18,6 +18,13 @@ export type JobPayloads = {
   "agent/reply": { threadId: string; inboundMessageId: string };
   "agent/send-draft": { draftId: string; chosenSlotIndex: number | null; auto: boolean };
   "agent/kb-document": { documentId: string };
+  "reports/analytics-sync": Record<string, never>;
+  "reports/email-health": Record<string, never>;
+  "reports/weekly-tick": Record<string, never>;
+  "reports/weekly-now": { clientId: string };
+  "reports/apply-proposal": { proposalId: string };
+  "system/budget-check": Record<string, never>;
+  "system/retention": Record<string, never>;
   "system/heartbeat": Record<string, never>;
 };
 export type JobName = keyof JobPayloads;

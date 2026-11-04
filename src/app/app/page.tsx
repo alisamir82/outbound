@@ -1,6 +1,7 @@
-import { and, count, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AlertsBanner } from "@/components/alerts-banner";
 import { Card, LinkButton, PageHeader, Stat } from "@/components/ui";
 import { db, schema } from "@/db";
 import { requireClientScope } from "@/lib/session";
@@ -24,10 +25,12 @@ export default async function ClientDashboard() {
     { key: "calendar", label: "Connect your calendar", done: client.onboarding.calendar, href: "/app/settings/replies" },
   ];
   const remaining = steps.filter((s) => !s.done).length;
+  const openAlerts = await db.query.alerts.findMany({ where: and(eq(schema.alerts.clientId, clientId), isNull(schema.alerts.acknowledgedAt)), orderBy: desc(schema.alerts.createdAt), limit: 5 });
 
   return (
     <>
       <PageHeader title={client.name} subtitle="Outbound dashboard" actions={<LinkButton href="/app/icps/new">New ICP</LinkButton>} />
+      <AlertsBanner alerts={openAlerts} />
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-6">
         <Stat label="ICPs" value={icps.n} />
         <Stat label="Leads" value={leads.n} />

@@ -1,4 +1,5 @@
-import { and, count, eq, isNull } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNull, sql } from "drizzle-orm";
+import { ProposalList } from "@/components/proposals";
 import { notFound } from "next/navigation";
 import { approveCopyAction, pushCampaignAction, regenerateCopyAction, setAutonomousModeAction, updateSequenceAction } from "@/actions/campaigns";
 import { simulateReplyAction } from "@/actions/inbox";
@@ -25,6 +26,13 @@ export default async function CampaignPage({ params }: PageProps<"/app/campaigns
       : Promise.resolve([{ n: 0 }]),
   ]);
   const instantly = await getInstantly();
+  const [daily, proposals] = await Promise.all([
+    db.query.campaignStatsDaily.findMany({
+      where: and(eq(schema.campaignStatsDaily.campaignId, id), gte(schema.campaignStatsDaily.day, sql`to_char(now() - interval '14 days', 'YYYY-MM-DD')`)),
+      orderBy: desc(schema.campaignStatsDaily.day),
+    }),
+    db.query.optimizationProposals.findMany({ where: eq(schema.optimizationProposals.campaignId, id), orderBy: desc(schema.optimizationProposals.createdAt), limit: 6 }),
+  ]);
   const pushedLeads = instantly.mode === "mock" ? await db.query.leads.findMany({ where: and(eq(schema.leads.campaignId, id), eq(schema.leads.status, "pushed")), limit: 50 }) : [];
   const busy = c.status === "generating" || c.status === "pushing";
   const editable = c.status === "review" || c.status === "approved";
@@ -40,6 +48,15 @@ export default async function CampaignPage({ params }: PageProps<"/app/campaigns
         <Stat label="Pushed to Instantly" value={pushed.n} />
         <Stat label="Replies" value={c.stats.replied} />
       </div>
+      {["pushed", "active", "paused"].includes(c.status) ? (
+        <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
+          <Stat label="Sent" value={c.stats.sent} />
+          <Stat label="Open rate" value={c.stats.sent ? `${((c.stats.opened / c.stats.sent) * 100).toFixed(0)}%` : "—"} />
+          <Stat label="Reply rate" value={c.stats.sent ? `${((c.stats.replied / c.stats.sent) * 100).toFixed(1)}%` : "—"} />
+          <Stat label="Bounce rate" value={c.stats.sent ? `${((c.stats.bounced / c.stats.sent) * 100).toFixed(1)}%` : "—"} />
+          <Stat label="Meetings" value={c.stats.meetings} />
+        </div>
+      ) : null}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Card
@@ -83,6 +100,23 @@ export default async function CampaignPage({ params }: PageProps<"/app/campaigns
               </ActionForm>
             )}
           </Card>
+          {proposals.length ? (
+            <Card title="Optimisation proposals">
+              <ProposalList proposals={proposals} canManage={canManage} />
+            </Card>
+          ) : null}
+          {daily.length ? (
+            <Card title="Last 14 days">
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs uppercase text-zinc-500"><tr><th className="py-1">Day</th><th>Sent</th><th>Opened</th><th>Replied</th><th>Bounced</th></tr></thead>
+                <tbody>
+                  {daily.map((d) => (
+                    <tr key={d.day} className="border-t border-zinc-100"><td className="py-1">{d.day}</td><td>{d.sent}</td><td>{d.opened}</td><td>{d.replied}</td><td>{d.bounced}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          ) : null}
           {c.brief ? (
             <Card title="Brief">
               <p className="whitespace-pre-wrap text-sm text-zinc-600">{c.brief}</p>
