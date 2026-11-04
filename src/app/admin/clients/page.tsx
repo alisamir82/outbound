@@ -1,5 +1,6 @@
 import { asc, count, eq } from "drizzle-orm";
 import Link from "next/link";
+import { viewAsClientAction } from "@/actions/view-as";
 import { db, schema } from "@/db";
 import { Badge, LinkButton, PageHeader, Table } from "@/components/ui";
 
@@ -40,9 +41,9 @@ export default async function ClientsPage() {
             <td className="px-4 py-2">${c.budget}</td>
             <td className="px-4 py-2 text-zinc-500">{c.createdAt.toLocaleDateString()}</td>
             <td className="px-4 py-2 text-right">
-              <Link href={`/app?as=${c.id}`} className="text-xs text-zinc-600 underline">
-                View as client
-              </Link>
+              <form action={viewAsClientAction.bind(null, c.id)}>
+                <button className="text-xs text-zinc-600 underline">View as client</button>
+              </form>
             </td>
           </tr>
         ))}

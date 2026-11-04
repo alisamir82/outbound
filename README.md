@@ -5,7 +5,15 @@ Agency-operated outbound sales platform with Claude at the centre: ICP + lead ge
 ## Status
 
 **Phase 0 (foundation) – done.** Auth, roles, tenancy, admin portal (clients, users, integrations), client portal shell, worker skeleton, Docker/VPS deployment.
-Next: Phase 1 (ICP builder, lead-gen pipeline, approval, push to Instantly).
+**Phase 1 (lead generation) – done.** ICP builder, lead-run pipeline (source → dedupe → verify → qualify → review), campaign copywriter with approval, push to Instantly, per-client skill overrides, AI metering and budgets.
+Next: Phase 2 (Instantly reply webhooks, inbox with AI drafts and one-click approval, knowledge base, calendar booking).
+
+### AI and Instantly modes
+
+Both run in **mock mode** until configured under Admin → Integrations, so the whole flow works in a demo without keys:
+
+- **Anthropic**: set Mode = Live and an API key. Default models are `claude-opus-5-5` (ICPs, copy) and `claude-haiku-5-5` (lead scoring). Every call is metered per client in `agent_runs`; a client whose monthly budget is exhausted gets a clear error instead of a silent failure.
+- **Instantly**: set the API key and tick Enabled. The adapter in `src/lib/instantly/client.ts` creates the campaign, adds leads with a `qualification` custom variable, and activates it. Confirm field names against a test workspace before the first real push.
 
 ## Stack
 
@@ -46,8 +54,12 @@ Seeded logins (change in production):
 ```
 src/app/(auth)/        login, forgot/reset password, accept invite
 src/app/admin/         Super-admin portal: overview, clients, platform team, integrations
-src/app/app/           Client portal: dashboard, team (leads/campaigns/inbox come in later phases)
+src/app/app/           Client portal: dashboard, ICPs, leads + lead runs, campaigns, AI skills, team
 src/actions/           Server actions (auth, clients/users, settings)
+src/lib/ai/            Anthropic client, skills (prompts + overrides), metering, ICP / qualifier / copywriter
+src/lib/pipeline/      Lead-run and campaign processors (run by the worker)
+src/lib/instantly/     Instantly v2 adapter (live + mock)
+src/lib/queue.ts       Typed BullMQ job names shared by app and worker
 src/lib/               crypto (AES-GCM secrets), email (Resend), settings (integration registry), leads adapters
 src/db/                Drizzle schema + client
 src/worker/            BullMQ worker and queue definitions

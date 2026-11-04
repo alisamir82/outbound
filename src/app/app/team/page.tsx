@@ -5,11 +5,9 @@ import { UserTable } from "@/components/user-table";
 import { db, schema } from "@/db";
 import { requireClientScope } from "@/lib/session";
 
-export default async function TeamPage({ searchParams }: PageProps<"/app/team">) {
-  const sp = await searchParams;
-  const { user, clientId } = await requireClientScope(typeof sp.as === "string" ? sp.as : null);
+export default async function TeamPage() {
+  const { user, clientId, canManage } = await requireClientScope();
   const users = await db.query.users.findMany({ where: eq(schema.users.clientId, clientId), orderBy: asc(schema.users.createdAt) });
-  const canManage = user.role !== "client_user";
   return (
     <>
       <PageHeader title="Team" subtitle={canManage ? "Invite colleagues and manage access." : "Your workspace members."} />

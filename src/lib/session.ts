@@ -1,6 +1,9 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import type { Role } from "@/auth.config";
+
+export const VIEW_AS_COOKIE = "view_as_client";
 
 export async function requireUser() {
   const session = await auth();
@@ -16,14 +19,15 @@ export async function requireRole(...roles: Role[]) {
 
 /**
  * Resolves which client the current request is scoped to.
- * Client users: their own client. Super admin: the `?as=<clientId>` param ("view as client").
+ * Client users: their own client. Super admin: the "view as client" cookie set from the admin portal.
  */
-export async function requireClientScope(asParam?: string | null) {
+export async function requireClientScope() {
   const user = await requireUser();
   if (user.role === "super_admin") {
-    if (!asParam) redirect("/admin/clients");
-    return { user, clientId: asParam, viewingAs: true };
+    const asId = (await cookies()).get(VIEW_AS_COOKIE)?.value;
+    if (!asId) redirect("/admin/clients");
+    return { user, clientId: asId, viewingAs: true, canManage: true };
   }
   if (!user.clientId) redirect("/login");
-  return { user, clientId: user.clientId, viewingAs: false };
+  return { user, clientId: user.clientId, viewingAs: false, canManage: user.role === "client_admin" };
 }

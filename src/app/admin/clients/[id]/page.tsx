@@ -4,7 +4,8 @@ import { updateClientAction } from "@/actions/clients";
 import { ClientFields } from "@/components/client-form";
 import { ActionForm } from "@/components/forms";
 import { InviteForm } from "@/components/invite-form";
-import { Card, LinkButton, PageHeader } from "@/components/ui";
+import { viewAsClientAction } from "@/actions/view-as";
+import { Button, Card, PageHeader } from "@/components/ui";
 import { UserTable } from "@/components/user-table";
 import { db, schema } from "@/db";
 import { requireRole } from "@/lib/session";
@@ -19,7 +20,11 @@ export default async function ClientDetailPage({ params }: PageProps<"/admin/cli
 
   return (
     <>
-      <PageHeader title={client.name} subtitle={`Client · ${client.status}`} actions={<LinkButton href={`/app?as=${client.id}`} variant="secondary">View as client</LinkButton>} />
+      <PageHeader title={client.name} subtitle={`Client · ${client.status}`} actions={
+          <form action={viewAsClientAction.bind(null, client.id)}>
+            <Button variant="secondary">View as client</Button>
+          </form>
+        } />
       <div className="space-y-6">
         <Card title="Onboarding progress">
           <ul className="grid gap-2 text-sm md:grid-cols-4">
