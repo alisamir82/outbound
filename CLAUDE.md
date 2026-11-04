@@ -18,7 +18,7 @@ Read `IMPLEMENTATION_PLAN.md` first: it holds the agreed scope, roles, data mode
 ## Phase plan (from IMPLEMENTATION_PLAN.md §8)
 - Phase 0 foundation: done.
 - Phase 1 lead generation: done. ICP builder, lead runs, review, campaigns + copywriter, push to Instantly, skill overrides.
-- Phase 2: Instantly webhooks, inbox + reply drafts + approval, knowledge base (pgvector), calendar MCP, autonomous-mode guardrails.
+- Phase 2 replies: done. Webhooks → threads → reply agent (`src/lib/replies/service.ts`) → approval or autonomous send under `guardrails.ts`; KB with Postgres full-text search (swap point for embeddings is `src/lib/kb/search.ts`); calendar providers under `src/lib/calendar/`.
 - Phase 3: analytics sync, email health, weekly reports, optimisation proposals, budgets, eval suite, compliance jobs.
 
 ## Checks before finishing a task

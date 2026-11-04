@@ -1,10 +1,11 @@
 import { and, count, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { approveCopyAction, pushCampaignAction, regenerateCopyAction, updateSequenceAction } from "@/actions/campaigns";
+import { approveCopyAction, pushCampaignAction, regenerateCopyAction, setAutonomousModeAction, updateSequenceAction } from "@/actions/campaigns";
+import { simulateReplyAction } from "@/actions/inbox";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { ActionForm } from "@/components/forms";
 import { Textarea } from "@/components/textarea";
-import { Badge, Button, Card, Field, Input, PageHeader, Stat } from "@/components/ui";
+import { Badge, Button, Card, Field, Input, PageHeader, Select, Stat } from "@/components/ui";
 import { db, schema } from "@/db";
 import { getInstantly } from "@/lib/instantly/client";
 import { requireClientScope } from "@/lib/session";
@@ -12,7 +13,7 @@ import { requireClientScope } from "@/lib/session";
 const TONE = { draft: "zinc", generating: "amber", review: "amber", approved: "green", pushing: "amber", pushed: "green", active: "green", paused: "zinc", failed: "red" } as const;
 
 export default async function CampaignPage({ params }: PageProps<"/app/campaigns/[id]">) {
-  const { clientId } = await requireClientScope();
+  const { clientId, canManage } = await requireClientScope();
   const { id } = await params;
   const c = await db.query.campaigns.findFirst({ where: and(eq(schema.campaigns.id, id), eq(schema.campaigns.clientId, clientId)), with: { icp: true } });
   if (!c) notFound();
@@ -24,6 +25,7 @@ export default async function CampaignPage({ params }: PageProps<"/app/campaigns
       : Promise.resolve([{ n: 0 }]),
   ]);
   const instantly = await getInstantly();
+  const pushedLeads = instantly.mode === "mock" ? await db.query.leads.findMany({ where: and(eq(schema.leads.campaignId, id), eq(schema.leads.status, "pushed")), limit: 50 }) : [];
   const busy = c.status === "generating" || c.status === "pushing";
   const editable = c.status === "review" || c.status === "approved";
 
@@ -128,6 +130,38 @@ export default async function CampaignPage({ params }: PageProps<"/app/campaigns
               </li>
             </ol>
           </Card>
+          {["pushed", "active", "paused"].includes(c.status) ? (
+            <Card title="Reply handling">
+              <p className="mb-3 text-sm text-zinc-600">
+                {c.autonomousMode ? "Autonomous: Claude sends replies that pass the guardrails and escalates the rest." : "Approval mode: every reply waits for one click in the inbox."}
+              </p>
+              {canManage ? (
+                <form action={setAutonomousModeAction.bind(null, c.id, !c.autonomousMode)}>
+                  <Button variant={c.autonomousMode ? "secondary" : "primary"} className="h-8 text-xs">
+                    {c.autonomousMode ? "Switch to approval mode" : "Enable autonomous mode"}
+                  </Button>
+                </form>
+              ) : null}
+            </Card>
+          ) : null}
+          {pushedLeads.length ? (
+            <Card title="Simulate a reply (mock mode)">
+              <ActionForm action={simulateReplyAction} submitLabel="Inject reply">
+                <Field label="From lead">
+                  <Select name="leadId" defaultValue={pushedLeads[0].id}>
+                    {pushedLeads.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {[l.firstName, l.lastName].filter(Boolean).join(" ")} · {l.company}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="Reply text">
+                  <Textarea name="text" rows={3} defaultValue="Interesting, tell me more. Could you do a call next week?" />
+                </Field>
+              </ActionForm>
+            </Card>
+          ) : null}
         </div>
       </div>
     </>

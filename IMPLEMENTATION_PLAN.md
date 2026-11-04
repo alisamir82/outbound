@@ -163,7 +163,7 @@ Pipeline per run, each step a BullMQ job with its own retry policy:
 ### 4.6 Knowledge base
 
 - Upload PDF / DOCX / PPTX / TXT, or submit a URL to crawl (same-domain, depth 2, cap 200 pages).
-- Worker extracts text, chunks (≈800 tokens, 100 overlap), embeds, stores in `kb_chunks` with `client_id` and source metadata.
+- Worker extracts text, chunks (≈750 tokens, overlap), stores in `kb_chunks` with `client_id` and source metadata. Retrieval is Postgres full-text search at launch (no external embedding dependency); pgvector + an embedding provider is a drop-in change in one file when relevance needs it.
 - `kb-mcp` exposes `search_kb(query, k)` and `get_document(id)`. Every reply draft records which chunks it used so the client can see "why did it say this".
 
 ### 4.7 Skills
@@ -296,7 +296,7 @@ Estimates assume one senior full-stack engineer plus one engineer for AI/integra
 - Campaign creation with copywriter skill and copy approval.
 - **Exit:** Pilot client runs a real campaign end to end from the platform.
 
-### Phase 2 — Replies and meetings (weeks 6–8)
+### Phase 2 — Replies and meetings (weeks 6–8) — done
 - Instantly webhook ingestion, thread model, inbox UI.
 - Reply-handler skill, classification, drafts, one-click approval, send via Instantly.
 - Knowledge base upload, chunking, `kb-mcp`.

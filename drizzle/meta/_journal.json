@@ -15,6 +15,13 @@
       "when": 1793789800018,
       "tag": "0001_nappy_screwball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793790975397,
+      "tag": "0002_huge_speedball",
+      "breakpoints": true
     }
   ]
 }

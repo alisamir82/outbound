@@ -4,7 +4,7 @@ import { authConfig } from "./auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC = [/^\/login$/, /^\/forgot-password$/, /^\/reset-password\//, /^\/accept-invite\//, /^\/api\/auth\//, /^\/api\/health$/];
+const PUBLIC = [/^\/login$/, /^\/forgot-password$/, /^\/reset-password\//, /^\/accept-invite\//, /^\/api\/auth\//, /^\/api\/health$/, /^\/api\/webhooks\//];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;

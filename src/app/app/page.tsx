@@ -9,31 +9,44 @@ export default async function ClientDashboard() {
   const { clientId } = await requireClientScope();
   const client = await db.query.clients.findFirst({ where: eq(schema.clients.id, clientId) });
   if (!client) notFound();
-  const [[leads], [toReview], [icps], [campaigns], [meetings]] = await Promise.all([
+  const [[leads], [toReview], [icps], [campaigns], [meetings], [attention]] = await Promise.all([
     db.select({ n: count() }).from(schema.leads).where(eq(schema.leads.clientId, clientId)),
     db.select({ n: count() }).from(schema.leads).where(and(eq(schema.leads.clientId, clientId), eq(schema.leads.status, "new"))),
     db.select({ n: count() }).from(schema.icps).where(eq(schema.icps.clientId, clientId)),
     db.select({ n: count() }).from(schema.campaigns).where(and(eq(schema.campaigns.clientId, clientId), inArray(schema.campaigns.status, ["active", "pushed", "paused"]))),
-    db.select({ n: count() }).from(schema.leads).where(and(eq(schema.leads.clientId, clientId), eq(schema.leads.status, "meeting"))),
+    db.select({ n: count() }).from(schema.meetings).where(eq(schema.meetings.clientId, clientId)),
+    db.select({ n: count() }).from(schema.threads).where(and(eq(schema.threads.clientId, clientId), inArray(schema.threads.status, ["awaiting_approval", "escalated"]))),
   ]);
   const steps = [
     { key: "profile", label: "Complete company profile", done: client.onboarding.profile, href: null },
     { key: "icp", label: "Create your first Ideal Customer Profile", done: client.onboarding.icp || icps.n > 0, href: "/app/icps/new" },
-    { key: "knowledgeBase", label: "Upload case studies and sales material", done: client.onboarding.knowledgeBase, href: null },
-    { key: "calendar", label: "Connect your calendar", done: client.onboarding.calendar, href: null },
+    { key: "knowledgeBase", label: "Upload case studies and sales material", done: client.onboarding.knowledgeBase, href: "/app/knowledge" },
+    { key: "calendar", label: "Connect your calendar", done: client.onboarding.calendar, href: "/app/settings/replies" },
   ];
   const remaining = steps.filter((s) => !s.done).length;
 
   return (
     <>
       <PageHeader title={client.name} subtitle="Outbound dashboard" actions={<LinkButton href="/app/icps/new">New ICP</LinkButton>} />
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-6">
         <Stat label="ICPs" value={icps.n} />
         <Stat label="Leads" value={leads.n} />
-        <Stat label="Awaiting review" value={toReview.n} />
+        <Stat label="Leads to review" value={toReview.n} />
         <Stat label="Live campaigns" value={campaigns.n} />
+        <Stat label="Replies to approve" value={attention.n} />
         <Stat label="Meetings booked" value={meetings.n} />
       </div>
+      {attention.n > 0 ? (
+        <Card className="mb-6">
+          <p className="text-sm">
+            <strong>{attention.n}</strong> {attention.n === 1 ? "reply is" : "replies are"} waiting for your approval.{" "}
+            <Link href="/app/inbox" className="underline">
+              Open the inbox
+            </Link>
+            .
+          </p>
+        </Card>
+      ) : null}
       {toReview.n > 0 ? (
         <Card className="mb-6">
           <p className="text-sm">

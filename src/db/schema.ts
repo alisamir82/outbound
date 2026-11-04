@@ -46,6 +46,13 @@ export const leadRunStatus = pgEnum("lead_run_status", [
   "failed",
 ]);
 export const agentRunStatus = pgEnum("agent_run_status", ["running", "succeeded", "failed", "budget_exceeded"]);
+export const threadStatus = pgEnum("thread_status", ["open", "awaiting_approval", "escalated", "replied", "closed", "unsubscribed"]);
+export const messageDirection = pgEnum("message_direction", ["inbound", "outbound"]);
+export const messageSender = pgEnum("message_sender", ["lead", "agent", "human", "sequence"]);
+export const draftStatus = pgEnum("draft_status", ["pending", "approved", "edited", "rejected", "auto_sent", "escalated", "superseded"]);
+export const kbDocStatus = pgEnum("kb_doc_status", ["processing", "ready", "failed"]);
+export const calendarProvider = pgEnum("calendar_provider", ["google", "microsoft", "mock"]);
+export const meetingStatus = pgEnum("meeting_status", ["proposed", "booked", "cancelled"]);
 export const campaignStatus = pgEnum("campaign_status", [
   "draft",
   "generating",
@@ -57,6 +64,17 @@ export const campaignStatus = pgEnum("campaign_status", [
   "paused",
   "failed",
 ]);
+
+export type ReplySettings = {
+  senderName: string;
+  signature: string;
+  bookingLink: string;
+  meetingDurationMin: number;
+  /** Autonomous mode: drafts below this confidence are escalated to a human. */
+  minConfidence: number;
+  maxAgentRepliesPerThread: number;
+  businessHoursOnly: boolean;
+};
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -85,6 +103,18 @@ export const clients = pgTable("clients", {
     .notNull()
     .default({ start: "09:00", end: "17:00", days: [1, 2, 3, 4, 5] }),
   blockedRegions: text("blocked_regions").array().notNull().default(sql`'{}'::text[]`),
+  replySettings: jsonb("reply_settings")
+    .$type<ReplySettings>()
+    .notNull()
+    .default({
+      senderName: "",
+      signature: "",
+      bookingLink: "",
+      meetingDurationMin: 30,
+      minConfidence: 0.8,
+      maxAgentRepliesPerThread: 3,
+      businessHoursOnly: true,
+    }),
   onboarding: jsonb("onboarding")
     .$type<{ profile: boolean; knowledgeBase: boolean; calendar: boolean; icp: boolean }>()
     .notNull()
@@ -291,6 +321,201 @@ export const skillOverrides = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Replies: threads, messages, drafts, meetings
+// ---------------------------------------------------------------------------
+export type ReplyClassification =
+  | "interested"
+  | "question"
+  | "objection"
+  | "not_now"
+  | "wrong_person"
+  | "out_of_office"
+  | "unsubscribe"
+  | "hostile"
+  | "other";
+
+export const threads = pgTable(
+  "threads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "set null" }),
+    subject: text("subject"),
+    /** Instantly sending account the lead replied to; needed to reply from the same mailbox. */
+    emailAccount: text("email_account"),
+    status: threadStatus("status").notNull().default("open"),
+    lastClassification: text("last_classification").$type<ReplyClassification>(),
+    agentReplyCount: integer("agent_reply_count").notNull().default(0),
+    lastInboundAt: timestamp("last_inbound_at", { withTimezone: true }),
+    lastEventAt: timestamp("last_event_at", { withTimezone: true }).notNull().defaultNow(),
+    ...timestamps,
+  },
+  (t) => [index("threads_client_status_idx").on(t.clientId, t.status, t.lastEventAt), uniqueIndex("threads_lead_idx").on(t.leadId)],
+);
+
+export const messages = pgTable(
+  "messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => threads.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    direction: messageDirection("direction").notNull(),
+    sender: messageSender("sender").notNull(),
+    subject: text("subject"),
+    bodyText: text("body_text").notNull(),
+    bodyHtml: text("body_html"),
+    classification: text("classification").$type<ReplyClassification>(),
+    confidence: integer("confidence"), // 0-100
+    sentByUserId: uuid("sent_by_user_id").references(() => users.id, { onDelete: "set null" }),
+    draftId: uuid("draft_id"),
+    instantlyMessageId: text("instantly_message_id"),
+    kbChunkIds: text("kb_chunk_ids").array().notNull().default(sql`'{}'::text[]`),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("messages_thread_idx").on(t.threadId, t.sentAt), uniqueIndex("messages_instantly_idx").on(t.instantlyMessageId)],
+);
+
+export type ProposedSlot = { startAt: string; endAt: string; label: string };
+
+export const replyDrafts = pgTable(
+  "reply_drafts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => threads.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    inboundMessageId: uuid("inbound_message_id").references(() => messages.id, { onDelete: "set null" }),
+    classification: text("classification").$type<ReplyClassification>().notNull(),
+    confidence: integer("confidence").notNull(), // 0-100
+    draftText: text("draft_text").notNull(),
+    reasoning: text("reasoning"),
+    wantsMeeting: boolean("wants_meeting").notNull().default(false),
+    proposedSlots: jsonb("proposed_slots").$type<ProposedSlot[]>().notNull().default([]),
+    kbChunkIds: text("kb_chunk_ids").array().notNull().default(sql`'{}'::text[]`),
+    status: draftStatus("status").notNull().default("pending"),
+    escalationReasons: text("escalation_reasons").array().notNull().default(sql`'{}'::text[]`),
+    decidedBy: uuid("decided_by").references(() => users.id, { onDelete: "set null" }),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("drafts_client_status_idx").on(t.clientId, t.status, t.createdAt), index("drafts_thread_idx").on(t.threadId)],
+);
+
+export const meetings = pgTable(
+  "meetings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    threadId: uuid("thread_id").references(() => threads.id, { onDelete: "set null" }),
+    provider: calendarProvider("provider").notNull(),
+    externalEventId: text("external_event_id"),
+    title: text("title").notNull(),
+    startAt: timestamp("start_at", { withTimezone: true }).notNull(),
+    endAt: timestamp("end_at", { withTimezone: true }).notNull(),
+    status: meetingStatus("status").notNull().default("booked"),
+    bookedBy: text("booked_by").notNull().default("agent"), // agent | human
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("meetings_client_idx").on(t.clientId, t.startAt)],
+);
+
+export const calendarConnections = pgTable(
+  "calendar_connections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    provider: calendarProvider("provider").notNull(),
+    accountEmail: text("account_email").notNull(),
+    /** AES-GCM encrypted JSON { accessToken, refreshToken, expiresAt } */
+    tokenCiphertext: text("token_ciphertext").notNull(),
+    calendarId: text("calendar_id").notNull().default("primary"),
+    connectedBy: uuid("connected_by").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("calendar_client_idx").on(t.clientId)],
+);
+
+// ---------------------------------------------------------------------------
+// Knowledge base
+// ---------------------------------------------------------------------------
+export const kbDocuments = pgTable(
+  "kb_documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    type: text("type").notNull(), // pdf | docx | pptx | txt | md | url
+    sourceUrl: text("source_url"),
+    storageKey: text("storage_key"),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    status: kbDocStatus("status").notNull().default("processing"),
+    chunkCount: integer("chunk_count").notNull().default(0),
+    error: text("error"),
+    uploadedBy: uuid("uploaded_by").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (t) => [index("kb_docs_client_idx").on(t.clientId)],
+);
+
+export const kbChunks = pgTable(
+  "kb_chunks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    documentId: uuid("document_id")
+      .notNull()
+      .references(() => kbDocuments.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    ordinal: integer("ordinal").notNull(),
+    chunkText: text("chunk_text").notNull(),
+    heading: text("heading"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("kb_chunks_doc_idx").on(t.documentId, t.ordinal), index("kb_chunks_client_idx").on(t.clientId)],
+);
+
+// ---------------------------------------------------------------------------
+// Inbound webhooks (raw, for replay and debugging)
+// ---------------------------------------------------------------------------
+export const webhookEvents = pgTable(
+  "webhook_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    provider: text("provider").notNull(),
+    eventType: text("event_type").notNull(),
+    dedupeKey: text("dedupe_key").notNull().unique(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    error: text("error"),
+  },
+  (t) => [index("webhook_events_received_idx").on(t.receivedAt)],
+);
+
+// ---------------------------------------------------------------------------
 // AI accounting
 // ---------------------------------------------------------------------------
 export const agentRuns = pgTable(
@@ -359,6 +584,24 @@ export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
   icp: one(icps, { fields: [campaigns.icpId], references: [icps.id] }),
   leads: many(leads),
 }));
+export const threadsRelations = relations(threads, ({ one, many }) => ({
+  lead: one(leads, { fields: [threads.leadId], references: [leads.id] }),
+  campaign: one(campaigns, { fields: [threads.campaignId], references: [campaigns.id] }),
+  messages: many(messages),
+  drafts: many(replyDrafts),
+}));
+export const messagesRelations = relations(messages, ({ one }) => ({
+  thread: one(threads, { fields: [messages.threadId], references: [threads.id] }),
+}));
+export const replyDraftsRelations = relations(replyDrafts, ({ one }) => ({
+  thread: one(threads, { fields: [replyDrafts.threadId], references: [threads.id] }),
+}));
+export const kbDocumentsRelations = relations(kbDocuments, ({ many }) => ({
+  chunks: many(kbChunks),
+}));
+export const kbChunksRelations = relations(kbChunks, ({ one }) => ({
+  document: one(kbDocuments, { fields: [kbChunks.documentId], references: [kbDocuments.id] }),
+}));
 
 export type Client = typeof clients.$inferSelect;
 export type User = typeof users.$inferSelect;
@@ -366,3 +609,9 @@ export type Lead = typeof leads.$inferSelect;
 export type Icp = typeof icps.$inferSelect;
 export type LeadRun = typeof leadRuns.$inferSelect;
 export type Campaign = typeof campaigns.$inferSelect;
+export type Thread = typeof threads.$inferSelect;
+export type Message = typeof messages.$inferSelect;
+export type ReplyDraft = typeof replyDrafts.$inferSelect;
+export type Meeting = typeof meetings.$inferSelect;
+export type KbDocument = typeof kbDocuments.$inferSelect;
+export type KbChunk = typeof kbChunks.$inferSelect;

@@ -94,3 +94,14 @@ export async function pushCampaignAction(_prev: ActionState, formData: FormData)
   revalidatePath(`/app/campaigns/${campaignId}`);
   return { success: `Pushing ${total} leads to Instantly…` };
 }
+
+/** Toggle autonomous reply mode. Client admins only; guardrails still apply. */
+export async function setAutonomousModeAction(campaignId: string, enabled: boolean) {
+  const { user, clientId, canManage } = await requireClientScope();
+  if (!canManage) return;
+  const c = await ownedCampaign(clientId, campaignId);
+  if (!c) return;
+  await db.update(schema.campaigns).set({ autonomousMode: enabled }).where(eq(schema.campaigns.id, campaignId));
+  await audit({ actorUserId: user.id, clientId, action: enabled ? "campaign.autonomous_enabled" : "campaign.autonomous_disabled", entityType: "campaign", entityId: campaignId });
+  revalidatePath(`/app/campaigns/${campaignId}`);
+}
