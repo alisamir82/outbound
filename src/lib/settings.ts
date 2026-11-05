@@ -78,9 +78,18 @@ export const INTEGRATIONS: Record<IntegrationKey, { title: string; description: 
     title: "Anthropic (Claude)",
     description: "Platform-wide API key. Usage is metered per client.",
     fields: [
+      {
+        name: "mode",
+        label: "Mode",
+        type: "select",
+        options: [
+          { value: "mock", label: "Mock (no API calls, placeholder output)" },
+          { value: "live", label: "Live (requires API key)" },
+        ],
+      },
       { name: "apiKey", label: "API key", type: "secret" },
-      { name: "defaultModel", label: "Default model", type: "text", help: "e.g. claude-fable-5-1" },
-      { name: "cheapModel", label: "Classification model", type: "text", help: "e.g. claude-haiku-5-5" },
+      { name: "defaultModel", label: "Default model", type: "text", help: "Used for ICPs, copy and replies. Default claude-opus-5-5; claude-fable-5-1 for maximum quality." },
+      { name: "cheapModel", label: "Classification model", type: "text", help: "Used for lead scoring and reply classification. Default claude-haiku-5-5." },
     ],
   },
 };
@@ -90,7 +99,7 @@ export const INTEGRATION_DEFAULTS: Record<IntegrationKey, Record<string, unknown
   email_verification: { provider: "mock", acceptCatchAll: false },
   apollo: {},
   instantly: { enabled: false },
-  anthropic: { defaultModel: "claude-fable-5-1", cheapModel: "claude-haiku-5-5" },
+  anthropic: { mode: "mock", defaultModel: "claude-opus-5-5", cheapModel: "claude-haiku-5-5" },
 };
 
 export type IntegrationConfig = { value: Record<string, unknown>; secrets: Record<string, string>; hasSecrets: string[] };

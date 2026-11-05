@@ -1,32 +1,15 @@
 import "dotenv/config";
-import { Queue, Worker, type Job } from "bullmq";
-import IORedis from "ioredis";
+import { Worker, type Job } from "bullmq";
 import { sql } from "drizzle-orm";
-import { db } from "../db";
+import { db } from "@/db";
+import { processCampaignCopy, processCampaignPush } from "@/lib/pipeline/campaign";
+import { processLeadRun } from "@/lib/pipeline/lead-run";
+import { getQueue, getRedis, QUEUES } from "@/lib/queue";
 
 /**
- * Background worker. Phase 0 ships the skeleton: queue wiring, a repeatable
- * heartbeat job and graceful shutdown. Later phases add processors here:
- *   lead-runs      → source / dedupe / verify / qualify
- *   instantly      → webhook processing, analytics sync
- *   agent          → Claude Agent SDK runs
- *   reports        → weekly reports, optimisation proposals
+ * Background worker. Processors are keyed by queue then job name; job names
+ * match `JobPayloads` in src/lib/queue.ts.
  */
-const connection = new IORedis(process.env.REDIS_URL ?? "redis://localhost:6379", { maxRetriesPerRequest: null });
-
-export const QUEUES = {
-  system: "system",
-  leadRuns: "lead-runs",
-  agent: "agent",
-  instantly: "instantly",
-  reports: "reports",
-} as const;
-
-export const queues = Object.fromEntries(Object.values(QUEUES).map((name) => [name, new Queue(name, { connection })])) as Record<
-  (typeof QUEUES)[keyof typeof QUEUES],
-  Queue
->;
-
 type Processor = (job: Job) => Promise<unknown>;
 
 const processors: Record<string, Record<string, Processor>> = {
@@ -36,12 +19,19 @@ const processors: Record<string, Record<string, Processor>> = {
       return { ok: true, at: new Date().toISOString() };
     },
   },
-  [QUEUES.leadRuns]: {},
-  [QUEUES.agent]: {},
-  [QUEUES.instantly]: {},
+  [QUEUES.leadRuns]: {
+    run: (job) => processLeadRun(job.data.leadRunId),
+  },
+  [QUEUES.agent]: {
+    "campaign-copy": (job) => processCampaignCopy(job.data.campaignId),
+  },
+  [QUEUES.instantly]: {
+    "push-campaign": (job) => processCampaignPush(job.data.campaignId),
+  },
   [QUEUES.reports]: {},
 };
 
+const connection = getRedis();
 const workers = Object.entries(processors).map(
   ([queueName, handlers]) =>
     new Worker(
@@ -61,8 +51,7 @@ for (const w of workers) {
 }
 
 async function scheduleRepeatables() {
-  await queues.system.upsertJobScheduler("heartbeat", { every: 5 * 60 * 1000 }, { name: "heartbeat" });
-  // Later: analytics-sync hourly, email-health daily, weekly-report Mondays 07:00 client-local.
+  await getQueue(QUEUES.system).upsertJobScheduler("heartbeat", { every: 5 * 60 * 1000 }, { name: "heartbeat" });
 }
 
 async function shutdown() {

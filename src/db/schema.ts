@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -45,6 +46,17 @@ export const leadRunStatus = pgEnum("lead_run_status", [
   "failed",
 ]);
 export const agentRunStatus = pgEnum("agent_run_status", ["running", "succeeded", "failed", "budget_exceeded"]);
+export const campaignStatus = pgEnum("campaign_status", [
+  "draft",
+  "generating",
+  "review",
+  "approved",
+  "pushing",
+  "pushed",
+  "active",
+  "paused",
+  "failed",
+]);
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -205,7 +217,9 @@ export const leads = pgTable(
     qualification: text("qualification"),
     status: leadStatus("status").notNull().default("new"),
     instantlyLeadId: text("instantly_lead_id"),
-    campaignId: uuid("campaign_id"),
+    campaignId: uuid("campaign_id").references((): AnyPgColumn => campaigns.id, { onDelete: "set null" }),
+    pushedAt: timestamp("pushed_at", { withTimezone: true }),
+    pushError: text("push_error"),
     ...timestamps,
   },
   (t) => [
@@ -226,6 +240,54 @@ export const suppressions = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("suppressions_value_idx").on(t.value)],
+);
+
+// ---------------------------------------------------------------------------
+// Campaigns
+// ---------------------------------------------------------------------------
+export type SequenceStep = { subject: string; body: string; delayDays: number };
+
+export const campaigns = pgTable(
+  "campaigns",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    icpId: uuid("icp_id").references(() => icps.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    status: campaignStatus("status").notNull().default("draft"),
+    brief: text("brief"),
+    sequence: jsonb("sequence").$type<SequenceStep[]>().notNull().default([]),
+    instantlyCampaignId: text("instantly_campaign_id"),
+    autonomousMode: boolean("autonomous_mode").notNull().default(false),
+    stats: jsonb("stats")
+      .$type<{ sent: number; opened: number; replied: number; bounced: number; meetings: number }>()
+      .notNull()
+      .default({ sent: 0, opened: 0, replied: 0, bounced: 0, meetings: 0 }),
+    error: text("error"),
+    copyApprovedBy: uuid("copy_approved_by").references(() => users.id, { onDelete: "set null" }),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    pushedAt: timestamp("pushed_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [index("campaigns_client_idx").on(t.clientId)],
+);
+
+/** Per-client override of a global skill (global skills live in src/lib/ai/skills/*.md). */
+export const skillOverrides = pgTable(
+  "skill_overrides",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    skillKey: text("skill_key").notNull(),
+    content: text("content").notNull(),
+    updatedBy: uuid("updated_by").references(() => users.id, { onDelete: "set null" }),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("skill_overrides_client_key_idx").on(t.clientId, t.skillKey)],
 );
 
 // ---------------------------------------------------------------------------
@@ -287,9 +349,20 @@ export const icpsRelations = relations(icps, ({ one }) => ({
 export const leadsRelations = relations(leads, ({ one }) => ({
   client: one(clients, { fields: [leads.clientId], references: [clients.id] }),
   run: one(leadRuns, { fields: [leads.leadRunId], references: [leadRuns.id] }),
+  campaign: one(campaigns, { fields: [leads.campaignId], references: [campaigns.id] }),
+}));
+export const leadRunsRelations = relations(leadRuns, ({ one, many }) => ({
+  icp: one(icps, { fields: [leadRuns.icpId], references: [icps.id] }),
+  leads: many(leads),
+}));
+export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
+  icp: one(icps, { fields: [campaigns.icpId], references: [icps.id] }),
+  leads: many(leads),
 }));
 
 export type Client = typeof clients.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type Lead = typeof leads.$inferSelect;
 export type Icp = typeof icps.$inferSelect;
+export type LeadRun = typeof leadRuns.$inferSelect;
+export type Campaign = typeof campaigns.$inferSelect;

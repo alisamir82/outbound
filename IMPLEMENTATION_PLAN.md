@@ -253,8 +253,8 @@ Runs are idempotent (keyed by `trigger` + entity id) so a retried job never send
 
 ### 6.3 Model routing and cost control
 
-- Fable 5.1 for ICP building, copywriting, reply drafting, optimisation proposals.
-- Haiku 5.5 for classification, lead scoring, and dedup matching.
+- Claude Opus 5.5 by default for ICP building, copywriting, reply drafting and optimisation proposals; switchable to Claude Fable 5.1 per platform in Admin → Integrations when maximum quality is worth the higher price.
+- Claude Haiku 5.5 for classification, lead scoring, and dedup matching.
 - Prompt caching on the skill + KB context per client, which cuts cost on high-volume reply handling.
 - Per-client monthly budget enforced in the worker before each run. Admin dashboard shows spend by client and by skill.
 
@@ -283,13 +283,13 @@ If Connected offers only manual exports, the CSV adapter already covers it on da
 
 Estimates assume one senior full-stack engineer plus one engineer for AI/integrations, with you reviewing. Add 20 % if one person does everything.
 
-### Phase 0 — Foundation (weeks 1–2)
+### Phase 0 — Foundation (weeks 1–2) — done
 - Repo, CI, Docker, Terraform for the chosen cloud, Postgres + Redis + bucket.
 - Auth (email/password, magic link), roles, RLS, audit log.
 - Admin: create client, invite users, set budget. Client: onboarding checklist shell.
 - **Exit:** Super Admin can create a client and the client can log in.
 
-### Phase 1 — Lead generation to Instantly (weeks 3–5)
+### Phase 1 — Lead generation to Instantly (weeks 3–5) — done
 - ICP builder skill and UI.
 - `leads-mcp` with Apollo and CSV adapters, verification, dedup, qualification.
 - Lead review and approval UI. Push to Instantly with custom variables.

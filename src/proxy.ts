@@ -19,8 +19,8 @@ export default auth((req) => {
   const isAdmin = user.role === "super_admin";
   if (pathname === "/") return NextResponse.redirect(new URL(isAdmin ? "/admin" : "/app", req.url));
   if (pathname.startsWith("/admin") && !isAdmin) return NextResponse.redirect(new URL("/app", req.url));
-  if (pathname.startsWith("/app") && isAdmin && !req.nextUrl.searchParams.has("as"))
-    return NextResponse.redirect(new URL("/admin", req.url));
+  if (pathname.startsWith("/app") && isAdmin && !req.cookies.get("view_as_client"))
+    return NextResponse.redirect(new URL("/admin/clients", req.url));
   return NextResponse.next();
 });
 

@@ -16,6 +16,7 @@
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0",
     "bcryptjs": "^3.0.3",
     "bullmq": "^6.6.0",
     "drizzle-orm": "^0.45.4",

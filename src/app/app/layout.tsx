@@ -1,33 +1,28 @@
 import { eq } from "drizzle-orm";
-import Link from "next/link";
+import { exitViewAsAction } from "@/actions/view-as";
 import { Shell } from "@/components/shell";
 import { db, schema } from "@/db";
-import { requireUser } from "@/lib/session";
+import { requireClientScope } from "@/lib/session";
 
 export default async function AppLayout({ children }: LayoutProps<"/app">) {
-  const user = await requireUser();
+  const { user, clientId, viewingAs } = await requireClientScope();
+  const client = await db.query.clients.findFirst({ where: eq(schema.clients.id, clientId), columns: { name: true } });
   const nav = [
     { href: "/app", label: "Dashboard" },
+    { href: "/app/icps", label: "ICPs" },
+    { href: "/app/leads", label: "Leads" },
+    { href: "/app/campaigns", label: "Campaigns" },
+    { href: "/app/settings/skills", label: "AI skills" },
     { href: "/app/team", label: "Team" },
   ];
-  let banner = null;
-  if (user.role === "super_admin") {
-    // "View as client" mode: the `as` param is carried by each page, the layout only shows the banner.
-    banner = (
-      <div className="bg-amber-100 px-4 py-2 text-sm text-amber-900">
-        Viewing as a client (super admin).{" "}
-        <Link href="/admin/clients" className="underline">
-          Back to admin
-        </Link>
-      </div>
-    );
-  } else if (user.clientId) {
-    const client = await db.query.clients.findFirst({ where: eq(schema.clients.id, user.clientId), columns: { name: true } });
-    nav.unshift({ href: "/app", label: client?.name ?? "Workspace" });
-    nav.splice(1, 1);
-  }
+  const banner = viewingAs ? (
+    <form action={exitViewAsAction} className="flex items-center gap-3 bg-amber-100 px-4 py-2 text-sm text-amber-900">
+      <span>Viewing <strong>{client?.name}</strong> as super admin.</span>
+      <button className="underline">Back to admin</button>
+    </form>
+  ) : null;
   return (
-    <Shell nav={nav} area="Client workspace" user={user} banner={banner}>
+    <Shell nav={nav} area={client?.name ?? "Client workspace"} user={user} banner={banner}>
       {children}
     </Shell>
   );
