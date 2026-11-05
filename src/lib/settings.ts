@@ -1,0 +1,123 @@
+import { eq } from "drizzle-orm";
+import { db, schema } from "@/db";
+import { decryptJson, encryptJson } from "./crypto";
+
+/**
+ * Integration registry. Each integration is configured by the Super Admin under
+ * Admin → Settings → Integrations. Non-secret fields live in `value`, secrets are
+ * encrypted at rest. Adding a new provider = add an entry here + an adapter.
+ */
+export type IntegrationKey =
+  | "lead_source"
+  | "email_verification"
+  | "instantly"
+  | "anthropic"
+  | "apollo";
+
+export type IntegrationField = {
+  name: string;
+  label: string;
+  type: "text" | "secret" | "number" | "boolean" | "select";
+  options?: { value: string; label: string }[];
+  help?: string;
+};
+
+export const INTEGRATIONS: Record<IntegrationKey, { title: string; description: string; fields: IntegrationField[] }> = {
+  lead_source: {
+    title: "Lead source",
+    description: "Where new leads are sourced from. 'Mock' generates realistic dummy data for testing.",
+    fields: [
+      {
+        name: "provider",
+        label: "Provider",
+        type: "select",
+        options: [
+          { value: "mock", label: "Mock (dummy data)" },
+          { value: "apollo", label: "Apollo.io" },
+          { value: "csv", label: "CSV upload only" },
+          { value: "connected", label: "Connected (pending API access)" },
+        ],
+      },
+      { name: "dailyCreditCap", label: "Daily credit cap", type: "number", help: "Max leads sourced per client per day." },
+    ],
+  },
+  email_verification: {
+    title: "Email verification",
+    description: "Provider used to verify addresses before pushing to Instantly.",
+    fields: [
+      {
+        name: "provider",
+        label: "Provider",
+        type: "select",
+        options: [
+          { value: "mock", label: "Mock (marks all valid)" },
+          { value: "millionverifier", label: "MillionVerifier" },
+          { value: "zerobounce", label: "ZeroBounce" },
+          { value: "instantly", label: "Instantly built-in" },
+        ],
+      },
+      { name: "apiKey", label: "API key", type: "secret" },
+      { name: "acceptCatchAll", label: "Accept catch-all addresses", type: "boolean" },
+    ],
+  },
+  apollo: {
+    title: "Apollo.io",
+    description: "Used when the lead source provider is Apollo.",
+    fields: [{ name: "apiKey", label: "API key", type: "secret" }],
+  },
+  instantly: {
+    title: "Instantly.ai",
+    description: "Agency account. Campaigns, leads and replies are synchronised via the v2 API and the hosted MCP server.",
+    fields: [
+      { name: "apiKey", label: "API key", type: "secret" },
+      { name: "webhookSecret", label: "Webhook secret", type: "secret", help: "Used to verify inbound webhooks." },
+      { name: "enabled", label: "Enabled", type: "boolean" },
+    ],
+  },
+  anthropic: {
+    title: "Anthropic (Claude)",
+    description: "Platform-wide API key. Usage is metered per client.",
+    fields: [
+      { name: "apiKey", label: "API key", type: "secret" },
+      { name: "defaultModel", label: "Default model", type: "text", help: "e.g. claude-fable-5-1" },
+      { name: "cheapModel", label: "Classification model", type: "text", help: "e.g. claude-haiku-5-5" },
+    ],
+  },
+};
+
+export const INTEGRATION_DEFAULTS: Record<IntegrationKey, Record<string, unknown>> = {
+  lead_source: { provider: "mock", dailyCreditCap: 500 },
+  email_verification: { provider: "mock", acceptCatchAll: false },
+  apollo: {},
+  instantly: { enabled: false },
+  anthropic: { defaultModel: "claude-fable-5-1", cheapModel: "claude-haiku-5-5" },
+};
+
+export type IntegrationConfig = { value: Record<string, unknown>; secrets: Record<string, string>; hasSecrets: string[] };
+
+export async function getIntegration(key: IntegrationKey): Promise<IntegrationConfig> {
+  const row = await db.query.platformSettings.findFirst({ where: eq(schema.platformSettings.key, key) });
+  const value = { ...INTEGRATION_DEFAULTS[key], ...(row?.value ?? {}) };
+  const secrets = row?.secretCiphertext ? decryptJson<Record<string, string>>(row.secretCiphertext) : {};
+  return { value, secrets, hasSecrets: Object.keys(secrets).filter((k) => secrets[k]) };
+}
+
+export async function saveIntegration(
+  key: IntegrationKey,
+  value: Record<string, unknown>,
+  secretPatch: Record<string, string | undefined>,
+  updatedBy: string,
+) {
+  const current = await getIntegration(key);
+  const secrets = { ...current.secrets };
+  for (const [k, v] of Object.entries(secretPatch)) {
+    if (v === undefined) continue; // blank input = keep existing
+    if (v === "") delete secrets[k];
+    else secrets[k] = v;
+  }
+  const secretCiphertext = Object.keys(secrets).length ? encryptJson(secrets) : null;
+  await db
+    .insert(schema.platformSettings)
+    .values({ key, value, secretCiphertext, updatedBy })
+    .onConflictDoUpdate({ target: schema.platformSettings.key, set: { value, secretCiphertext, updatedBy } });
+}
