@@ -34,7 +34,7 @@ export async function loginAction(_prev: ActionState, formData: FormData): Promi
 }
 
 export async function logoutAction() {
-  await signOut({ redirectTo: "/login" });
+  await signOut({ redirectTo: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/login` });
 }
 
 export async function forgotPasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {

@@ -1,10 +1,11 @@
 # Single-VPS deployment. `docker compose up -d` after copying .env.example to .env.
+# Set BASE_PATH=/outbound in .env to serve the app under https://DOMAIN/outbound (leave empty for the root).
 services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
     ports: ["80:80", "443:443"]
-    environment: { DOMAIN: "${DOMAIN}" }
+    environment: { DOMAIN: "${DOMAIN}", BASE_PATH: "${BASE_PATH:-}" }
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -12,17 +13,19 @@ services:
     depends_on: [web]
 
   web:
-    build: { context: ., target: web }
+    build: { context: ., target: web, args: { BASE_PATH: "${BASE_PATH:-}" } }
     restart: unless-stopped
     env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /app/data/uploads
+    volumes: [uploads:/app/data/uploads]
     depends_on:
       db: { condition: service_healthy }
       redis: { condition: service_started }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000${BASE_PATH:-}/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -34,6 +37,8 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /app/data/uploads
+    volumes: [uploads:/app/data/uploads]
     depends_on:
       db: { condition: service_healthy }
       redis: { condition: service_started }
@@ -59,6 +64,7 @@ services:
     volumes: [redis_data:/data]
 
 volumes:
+  uploads:
   pg_data:
   redis_data:
   caddy_data:
