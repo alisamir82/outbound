@@ -1,7 +1,7 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { logoutAction } from "@/actions/auth";
-import { Button } from "./ui";
+import { MobileNav, SideNav } from "./side-nav";
+import { Logo } from "./ui";
 
 export function Shell({
   nav,
@@ -16,40 +16,54 @@ export function Shell({
   children: ReactNode;
   banner?: ReactNode;
 }) {
+  const initials =
+    user.name
+      .split(/\s+/)
+      .map((p) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?";
   return (
-    <div className="flex min-h-screen bg-zinc-50">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-zinc-200 bg-white p-4 md:flex">
-        <div className="mb-6 px-2">
-          <p className="text-base font-semibold text-zinc-900">AI Outbound</p>
-          <p className="text-xs text-zinc-500">{area}</p>
+    <div className="flex min-h-screen">
+      <aside className="hidden w-64 shrink-0 flex-col bg-slate-900 p-4 md:flex">
+        <div className="mb-6 flex items-center gap-3 px-1">
+          <Logo size={36} />
+          <div className="min-w-0">
+            <p className="text-[15px] font-semibold tracking-tight text-white">AI Outbound</p>
+            <p className="truncate text-xs text-slate-400">{area}</p>
+          </div>
         </div>
-        <nav className="flex flex-1 flex-col gap-1">
-          {nav.map((n) => (
-            <Link key={n.href} href={n.href} className="rounded-md px-2 py-1.5 text-sm text-zinc-700 hover:bg-zinc-100">
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="mt-6 border-t border-zinc-200 pt-4">
-          <p className="truncate text-sm font-medium text-zinc-900">{user.name}</p>
-          <p className="truncate text-xs text-zinc-500">{user.email}</p>
-          <form action={logoutAction} className="mt-2">
-            <Button variant="ghost" className="h-8 px-2">
+        <SideNav items={nav} />
+        <div className="mt-6 border-t border-white/10 pt-4">
+          <div className="flex items-center gap-2.5 px-1">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-white" aria-hidden>
+              {initials}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-white">{user.name}</p>
+              <p className="truncate text-xs text-slate-400">{user.email}</p>
+            </div>
+          </div>
+          <form action={logoutAction} className="mt-3">
+            <button className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-slate-400 transition-colors duration-150 hover:bg-white/5 hover:text-white">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" x2="9" y1="12" y2="12" />
+              </svg>
               Sign out
-            </Button>
+            </button>
           </form>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-3 border-b border-zinc-200 bg-white px-4 py-2 md:hidden">
-          <span className="font-semibold">AI Outbound</span>
-          <nav className="flex gap-3 overflow-x-auto text-sm">
-            {nav.map((n) => (
-              <Link key={n.href} href={n.href}>
-                {n.label}
-              </Link>
-            ))}
-          </nav>
+        <header className="flex flex-col gap-1 bg-slate-900 px-4 py-2 md:hidden">
+          <div className="flex items-center gap-2.5">
+            <Logo size={28} />
+            <span className="font-semibold text-white">AI Outbound</span>
+            <span className="truncate text-xs text-slate-400">{area}</span>
+          </div>
+          <MobileNav items={nav} />
         </header>
         {banner}
         <main className="mx-auto w-full max-w-6xl flex-1 p-4 md:p-8">{children}</main>
