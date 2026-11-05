@@ -19,7 +19,8 @@ Read `IMPLEMENTATION_PLAN.md` first: it holds the agreed scope, roles, data mode
 - Phase 0 foundation: done.
 - Phase 1 lead generation: done. ICP builder, lead runs, review, campaigns + copywriter, push to Instantly, skill overrides.
 - Phase 2 replies: done. Webhooks → threads → reply agent (`src/lib/replies/service.ts`) → approval or autonomous send under `guardrails.ts`; KB with Postgres full-text search (swap point for embeddings is `src/lib/kb/search.ts`); calendar providers under `src/lib/calendar/`.
-- Phase 3: analytics sync, email health, weekly reports, optimisation proposals, budgets, eval suite, compliance jobs.
+- Phase 3 reporting and operations: done. Schedulers in `src/worker/index.ts`; analytics/health/reports/compliance under `src/lib/pipeline/`; alerts via `src/lib/alerts.ts` (dedupeKey = one open alert per condition).
+- MVP complete. Backlog: Connected lead-source adapter, Slack notifications, copy A/B tests, Instantly sub-workspace mapping, pgvector embeddings for the KB.
 
 ## Checks before finishing a task
-`pnpm typecheck && pnpm lint && pnpm build`, and run the seed against a fresh DB if the schema changed.
+`pnpm typecheck && pnpm lint && pnpm test && pnpm build`, and run the seed against a fresh DB if the schema changed. CI (`.github/workflows/ci.yml`) runs the same plus migrations.

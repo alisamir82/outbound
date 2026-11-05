@@ -8,8 +8,8 @@ sudo usermod -aG docker $USER && newgrp docker
 # 2. Code
 git clone <your-repo-url> ai-outbound && cd ai-outbound
 cp .env.example .env
-# edit .env: DOMAIN, AUTH_SECRET (openssl rand -base64 32), APP_ENCRYPTION_KEY (openssl rand -hex 32),
-#            POSTGRES_PASSWORD, RESEND_API_KEY, EMAIL_FROM, APP_URL=https://$DOMAIN, SEED_SUPER_ADMIN_*
+# edit .env: DOMAIN, BASE_PATH (e.g. /outbound, or empty), AUTH_SECRET (openssl rand -base64 32), APP_ENCRYPTION_KEY (openssl rand -hex 32),
+#            POSTGRES_PASSWORD, RESEND_API_KEY, EMAIL_FROM, APP_URL=https://$DOMAIN$BASE_PATH, SEED_SUPER_ADMIN_*
 
 # 3. First boot
 docker compose up -d db redis

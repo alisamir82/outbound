@@ -1,4 +1,11 @@
 {$DOMAIN} {
 	encode zstd gzip
-	reverse_proxy web:3000
+	# BASE_PATH empty: everything goes to the app. BASE_PATH=/outbound: only that prefix, root redirects to it.
+	@app path {$BASE_PATH}/* {$BASE_PATH}
+	handle @app {
+		reverse_proxy web:3000
+	}
+	handle {
+		redir {$BASE_PATH}/ 302
+	}
 }

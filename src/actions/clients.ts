@@ -26,7 +26,15 @@ const clientSchema = z.object({
   tokenBudgetMonthlyUsd: z.coerce.number().int().min(0).max(100_000),
   instantlyCampaignPrefix: z.string().max(40).optional().or(z.literal("")),
   instantlyWorkspaceId: z.string().max(120).optional().or(z.literal("")),
+  blockedRegions: z.string().max(200).optional().or(z.literal("")),
+  dataRetentionDays: z.coerce.number().int().min(0).max(3650).default(365),
 });
+
+const regions = (v: string | undefined) =>
+  (v ?? "")
+    .split(/[,\s]+/)
+    .map((s) => s.trim().toUpperCase())
+    .filter((s) => /^[A-Z]{2}$/.test(s));
 
 export async function createClientAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const admin = await requireRole("super_admin");
@@ -39,6 +47,8 @@ export async function createClientAction(_prev: ActionState, formData: FormData)
     tokenBudgetMonthlyUsd: formData.get("tokenBudgetMonthlyUsd") ?? 100,
     instantlyCampaignPrefix: formData.get("instantlyCampaignPrefix") ?? "",
     instantlyWorkspaceId: formData.get("instantlyWorkspaceId") ?? "",
+    blockedRegions: formData.get("blockedRegions") ?? "",
+    dataRetentionDays: formData.get("dataRetentionDays") ?? 365,
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
@@ -49,6 +59,7 @@ export async function createClientAction(_prev: ActionState, formData: FormData)
     .insert(schema.clients)
     .values({
       ...parsed.data,
+      blockedRegions: regions(parsed.data.blockedRegions),
       website: parsed.data.website || null,
       instantlyCampaignPrefix: parsed.data.instantlyCampaignPrefix || `[${parsed.data.slug}]`,
       instantlyWorkspaceId: parsed.data.instantlyWorkspaceId || null,
@@ -70,6 +81,8 @@ export async function updateClientAction(_prev: ActionState, formData: FormData)
     tokenBudgetMonthlyUsd: formData.get("tokenBudgetMonthlyUsd") ?? 100,
     instantlyCampaignPrefix: formData.get("instantlyCampaignPrefix") ?? "",
     instantlyWorkspaceId: formData.get("instantlyWorkspaceId") ?? "",
+    blockedRegions: formData.get("blockedRegions") ?? "",
+    dataRetentionDays: formData.get("dataRetentionDays") ?? 365,
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const status = z.enum(["onboarding", "active", "suspended"]).parse(formData.get("status"));
@@ -78,6 +91,7 @@ export async function updateClientAction(_prev: ActionState, formData: FormData)
     .update(schema.clients)
     .set({
       ...parsed.data,
+      blockedRegions: regions(parsed.data.blockedRegions),
       status,
       website: parsed.data.website || null,
       instantlyCampaignPrefix: parsed.data.instantlyCampaignPrefix || null,

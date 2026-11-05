@@ -6,6 +6,7 @@ Playwright scripts that drive the real UI against a seeded local stack (`pnpm db
 node tests/smoke/phase0.js   # auth, admin client management, integrations, team
 node tests/smoke/phase1.js   # ICP → lead run → review → campaign copy → approve → push
 node tests/smoke/phase2.js   # reply settings, KB upload, simulated replies → draft → approve + book, autonomous send / escalate / unsubscribe
+node tests/smoke/phase3.js   # admin health + account mapping, spend, alerts, compliance fields, campaign stats, report generation, proposal approve/reject, region block
 ```
 
 `phase2.js` expects the campaign created by `phase1.js` ("Q4 sales leaders") with pushed leads. Reset between runs:

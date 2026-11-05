@@ -42,3 +42,6 @@ next-env.d.ts
 
 # local
 .env
+
+# redis snapshots from a locally started redis-server
+dump.rdb

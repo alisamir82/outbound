@@ -1,4 +1,5 @@
-import { count, desc, eq, sql } from "drizzle-orm";
+import { count, desc, eq, isNull, sql } from "drizzle-orm";
+import { AlertsBanner } from "@/components/alerts-banner";
 import Link from "next/link";
 import { db, schema } from "@/db";
 import { Card, PageHeader, Stat } from "@/components/ui";
@@ -23,6 +24,7 @@ export default async function AdminOverview() {
       .orderBy(desc(schema.auditLog.createdAt))
       .limit(15),
   ]);
+  const openAlerts = await db.query.alerts.findMany({ where: isNull(schema.alerts.acknowledgedAt), orderBy: desc(schema.alerts.createdAt), limit: 8 });
   const spend = await db
     .select({ usd: sql<number>`coalesce(sum(${schema.agentRuns.costUsdMicros}),0)/1e6` })
     .from(schema.agentRuns)
@@ -31,6 +33,7 @@ export default async function AdminOverview() {
   return (
     <>
       <PageHeader title="Overview" subtitle="Platform-wide health" />
+      <AlertsBanner alerts={openAlerts} />
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
         <Stat label="Clients" value={clientCount.n} />
         <Stat label="Active" value={activeCount.n} />

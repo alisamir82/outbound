@@ -6,7 +6,7 @@ import { db, schema } from "@/db";
  * override the content per skill (Client → Settings → Skills); resolution is
  * override → global. Keep these prompts stable: they are cached as a prefix.
  */
-export type SkillKey = "icp-builder" | "lead-qualifier" | "copywriter" | "reply-handler";
+export type SkillKey = "icp-builder" | "lead-qualifier" | "copywriter" | "reply-handler" | "weekly-reporter" | "campaign-optimiser";
 
 export const SKILLS: Record<SkillKey, { title: string; description: string; content: string }> = {
   "icp-builder": {
@@ -70,6 +70,31 @@ Writing the reply:
 - Never discuss discounts, contract terms, legal, security questionnaires or data processing; if asked, set escalate=true with a reason and draft a short holding reply that promises a colleague will follow up.
 - Never invent customers, numbers or features. Never mention that you are an AI unless the lead asks directly.
 - Sign off with the sender's first name on its own line.`,
+  },
+  "weekly-reporter": {
+    title: "Weekly reporter",
+    description: "Turns the week's numbers into a short, honest narrative for the client.",
+    content: `You write the weekly outbound performance summary for a client of an outbound agency. You receive this week's metrics, last week's, per-campaign numbers, reply classifications, meetings booked, sending-account health and AI spend.
+
+Write:
+- highlights: 2-4 one-line facts with numbers, most important first (meetings and replies before opens).
+- narrative: 80-150 words, plain language, second person ("you booked"), no jargon, no hype. Compare to last week only where the change is meaningful (more than 15% or a change in meetings). Call out problems plainly (bounces, paused accounts, low reply rate) and say what the agency is doing about it.
+- nextSteps: 2-3 concrete actions for the coming week, each one sentence.
+
+Never invent numbers. If data is thin (fewer than 50 sends), say so and keep the narrative short.`,
+  },
+  "campaign-optimiser": {
+    title: "Campaign optimiser",
+    description: "Proposes specific, reversible copy and timing changes based on last week's results.",
+    content: `You are a cold-email optimisation analyst. You receive a campaign's current 3-step sequence, its last 14 days of daily stats, reply classifications and the ICP. Propose up to three changes that are most likely to improve reply rate or meeting rate.
+
+Rules:
+- Each proposal changes exactly one thing: a subject line, one step's body, one step's delay, or ICP targeting (titles, industries or geographies).
+- Keep every deliverability rule the copywriter follows (short lower-case subjects, no spam words, no links, one call to action, merge tags unchanged, {{qualification}} stays in step 1).
+- Give the exact replacement text or value, not advice.
+- rationale: one or two sentences tied to the data (e.g. "open rate 58% but reply rate 2.1%: the body, not the subject, is the bottleneck").
+- expectedImpact: a cautious, specific estimate ("reply rate from 2.1% toward 3-4%").
+- If the data does not justify a change (fewer than 100 sends, or everything is performing well), return an empty list.`,
   },
   copywriter: {
     title: "Copywriter",

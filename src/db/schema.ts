@@ -53,6 +53,10 @@ export const draftStatus = pgEnum("draft_status", ["pending", "approved", "edite
 export const kbDocStatus = pgEnum("kb_doc_status", ["processing", "ready", "failed"]);
 export const calendarProvider = pgEnum("calendar_provider", ["google", "microsoft", "mock"]);
 export const meetingStatus = pgEnum("meeting_status", ["proposed", "booked", "cancelled"]);
+export const alertSeverity = pgEnum("alert_severity", ["info", "warning", "critical"]);
+export const accountHealth = pgEnum("account_health", ["healthy", "warning", "critical", "unknown"]);
+export const proposalStatus = pgEnum("proposal_status", ["proposed", "approved", "applied", "rejected", "failed"]);
+export const proposalType = pgEnum("proposal_type", ["subject_line", "body", "timing", "targeting"]);
 export const campaignStatus = pgEnum("campaign_status", [
   "draft",
   "generating",
@@ -103,6 +107,10 @@ export const clients = pgTable("clients", {
     .notNull()
     .default({ start: "09:00", end: "17:00", days: [1, 2, 3, 4, 5] }),
   blockedRegions: text("blocked_regions").array().notNull().default(sql`'{}'::text[]`),
+  /** Unengaged leads older than this are deleted by the retention job. 0 disables. */
+  dataRetentionDays: integer("data_retention_days").notNull().default(365),
+  /** ISO week key (e.g. 2026-W45) of the last weekly report, to avoid duplicates. */
+  lastWeeklyReportKey: text("last_weekly_report_key"),
   replySettings: jsonb("reply_settings")
     .$type<ReplySettings>()
     .notNull()
@@ -498,6 +506,128 @@ export const kbChunks = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// Analytics, health, reports, proposals, alerts
+// ---------------------------------------------------------------------------
+export const campaignStatsDaily = pgTable(
+  "campaign_stats_daily",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    day: text("day").notNull(), // YYYY-MM-DD
+    sent: integer("sent").notNull().default(0),
+    opened: integer("opened").notNull().default(0),
+    replied: integer("replied").notNull().default(0),
+    bounced: integer("bounced").notNull().default(0),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("campaign_stats_daily_idx").on(t.campaignId, t.day), index("campaign_stats_client_idx").on(t.clientId, t.day)],
+);
+
+export const emailAccounts = pgTable(
+  "email_accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull().unique(),
+    /** null = agency-level account not yet mapped to a client */
+    clientId: uuid("client_id").references(() => clients.id, { onDelete: "set null" }),
+    warmupEnabled: boolean("warmup_enabled").notNull().default(false),
+    warmupScore: integer("warmup_score"), // 0-100
+    dailyLimit: integer("daily_limit").notNull().default(0),
+    sentToday: integer("sent_today").notNull().default(0),
+    bounceRate: integer("bounce_rate_bp").notNull().default(0), // basis points (250 = 2.5%)
+    replyRate: integer("reply_rate_bp").notNull().default(0),
+    providerStatus: text("provider_status"),
+    health: accountHealth("health").notNull().default("unknown"),
+    issues: text("issues").array().notNull().default(sql`'{}'::text[]`),
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [index("email_accounts_client_idx").on(t.clientId)],
+);
+
+export type ReportContent = {
+  period: { start: string; end: string };
+  totals: { sent: number; opened: number; replied: number; bounced: number; meetings: number; leadsAdded: number; aiSpendUsd: number };
+  previous: { sent: number; opened: number; replied: number; bounced: number; meetings: number };
+  campaigns: { id: string; name: string; sent: number; replied: number; replyRate: number; meetings: number; status: string }[];
+  classifications: Record<string, number>;
+  health: { accounts: number; warning: number; critical: number };
+  highlights: string[];
+  narrative: string;
+  nextSteps: string[];
+};
+
+export const reports = pgTable(
+  "reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    weekKey: text("week_key").notNull(),
+    periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+    periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),
+    content: jsonb("content").$type<ReportContent>().notNull(),
+    emailedAt: timestamp("emailed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("reports_client_week_idx").on(t.clientId, t.weekKey)],
+);
+
+export type ProposalChange =
+  | { kind: "subject_line"; step: number; from: string; to: string }
+  | { kind: "body"; step: number; from: string; to: string }
+  | { kind: "timing"; step: number; fromDays: number; toDays: number }
+  | { kind: "targeting"; field: "titles" | "industries" | "geographies"; add: string[]; remove: string[] };
+
+export const optimizationProposals = pgTable(
+  "optimization_proposals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
+    reportId: uuid("report_id").references(() => reports.id, { onDelete: "set null" }),
+    type: proposalType("type").notNull(),
+    title: text("title").notNull(),
+    rationale: text("rationale").notNull(),
+    expectedImpact: text("expected_impact").notNull(),
+    change: jsonb("change").$type<ProposalChange>().notNull(),
+    status: proposalStatus("status").notNull().default("proposed"),
+    decidedBy: uuid("decided_by").references(() => users.id, { onDelete: "set null" }),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    appliedAt: timestamp("applied_at", { withTimezone: true }),
+    error: text("error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("proposals_client_status_idx").on(t.clientId, t.status)],
+);
+
+export const alerts = pgTable(
+  "alerts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** null = platform-level alert (super admins only) */
+    clientId: uuid("client_id").references(() => clients.id, { onDelete: "cascade" }),
+    severity: alertSeverity("severity").notNull(),
+    type: text("type").notNull(), // email_health | budget | campaign | retention | system
+    /** Stable key so the same condition is not raised twice while open. */
+    dedupeKey: text("dedupe_key").notNull(),
+    message: text("message").notNull(),
+    acknowledgedBy: uuid("acknowledged_by").references(() => users.id, { onDelete: "set null" }),
+    acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("alerts_client_idx").on(t.clientId, t.acknowledgedAt, t.createdAt), index("alerts_dedupe_idx").on(t.dedupeKey, t.acknowledgedAt)],
+);
+
+// ---------------------------------------------------------------------------
 // Inbound webhooks (raw, for replay and debugging)
 // ---------------------------------------------------------------------------
 export const webhookEvents = pgTable(
@@ -596,6 +726,10 @@ export const messagesRelations = relations(messages, ({ one }) => ({
 export const replyDraftsRelations = relations(replyDrafts, ({ one }) => ({
   thread: one(threads, { fields: [replyDrafts.threadId], references: [threads.id] }),
 }));
+export const proposalsRelations = relations(optimizationProposals, ({ one }) => ({
+  campaign: one(campaigns, { fields: [optimizationProposals.campaignId], references: [campaigns.id] }),
+  report: one(reports, { fields: [optimizationProposals.reportId], references: [reports.id] }),
+}));
 export const kbDocumentsRelations = relations(kbDocuments, ({ many }) => ({
   chunks: many(kbChunks),
 }));
@@ -615,3 +749,7 @@ export type ReplyDraft = typeof replyDrafts.$inferSelect;
 export type Meeting = typeof meetings.$inferSelect;
 export type KbDocument = typeof kbDocuments.$inferSelect;
 export type KbChunk = typeof kbChunks.$inferSelect;
+export type Report = typeof reports.$inferSelect;
+export type OptimizationProposal = typeof optimizationProposals.$inferSelect;
+export type Alert = typeof alerts.$inferSelect;
+export type EmailAccount = typeof emailAccounts.$inferSelect;

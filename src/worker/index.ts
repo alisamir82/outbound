@@ -3,7 +3,11 @@ import { Worker, type Job } from "bullmq";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { processCampaignCopy, processCampaignPush } from "@/lib/pipeline/campaign";
+import { syncCampaignAnalytics } from "@/lib/pipeline/analytics";
+import { checkBudgets, runRetention } from "@/lib/pipeline/compliance";
+import { checkEmailHealth } from "@/lib/pipeline/health";
 import { processWebhookEvent } from "@/lib/pipeline/inbox";
+import { applyProposal, generateWeeklyReport, weeklyReportTick, weekKey } from "@/lib/pipeline/reports";
 import { processKbDocument } from "@/lib/pipeline/kb";
 import { processLeadRun } from "@/lib/pipeline/lead-run";
 import { processReplyAgent, sendDraft } from "@/lib/replies/service";
@@ -21,6 +25,8 @@ const processors: Record<string, Record<string, Processor>> = {
       await db.execute(sql`select 1`);
       return { ok: true, at: new Date().toISOString() };
     },
+    "budget-check": () => checkBudgets(),
+    retention: () => runRetention(),
   },
   [QUEUES.leadRuns]: {
     run: (job) => processLeadRun(job.data.leadRunId),
@@ -35,7 +41,13 @@ const processors: Record<string, Record<string, Processor>> = {
     "push-campaign": (job) => processCampaignPush(job.data.campaignId),
     webhook: (job) => processWebhookEvent(job.data.eventId),
   },
-  [QUEUES.reports]: {},
+  [QUEUES.reports]: {
+    "analytics-sync": () => syncCampaignAnalytics(),
+    "email-health": () => checkEmailHealth(),
+    "weekly-tick": () => weeklyReportTick(),
+    "weekly-now": (job) => generateWeeklyReport(job.data.clientId, `${weekKey(new Date(), "UTC")}-manual-${Date.now()}`),
+    "apply-proposal": (job) => applyProposal(job.data.proposalId),
+  },
 };
 
 const connection = getRedis();
@@ -58,7 +70,15 @@ for (const w of workers) {
 }
 
 async function scheduleRepeatables() {
-  await getQueue(QUEUES.system).upsertJobScheduler("heartbeat", { every: 5 * 60 * 1000 }, { name: "heartbeat" });
+  const system = getQueue(QUEUES.system);
+  const reports = getQueue(QUEUES.reports);
+  await system.upsertJobScheduler("heartbeat", { every: 5 * 60 * 1000 }, { name: "heartbeat" });
+  await system.upsertJobScheduler("budget-check", { every: 60 * 60 * 1000 }, { name: "budget-check" });
+  await system.upsertJobScheduler("retention", { pattern: "30 3 * * *" }, { name: "retention" });
+  await reports.upsertJobScheduler("analytics-sync", { every: 60 * 60 * 1000 }, { name: "analytics-sync" });
+  await reports.upsertJobScheduler("email-health", { pattern: "15 6 * * *" }, { name: "email-health" });
+  // Hourly tick; each client is reported at its local Monday 07:00-08:59.
+  await reports.upsertJobScheduler("weekly-tick", { pattern: "5 * * * *" }, { name: "weekly-tick" });
 }
 
 async function shutdown() {
