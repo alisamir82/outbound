@@ -1,7 +1,6 @@
 import JSZip from "jszip";
 import mammoth from "mammoth";
 import { convert } from "html-to-text";
-import { PDFParse } from "pdf-parse";
 
 export type KbSourceType = "pdf" | "docx" | "pptx" | "txt" | "md" | "url";
 
@@ -20,6 +19,10 @@ export async function extractText(type: KbSourceType, data: Buffer): Promise<str
   let text = "";
   switch (type) {
     case "pdf": {
+      // Lazy import: pdf-parse pulls in pdfjs, which needs browser globals
+      // (DOMMatrix) at module load and crashes the bundled SSR runtime if it
+      // sits in the page module graph. Only the worker ever runs this branch.
+      const { PDFParse } = await import("pdf-parse");
       const parser = new PDFParse({ data });
       try {
         const result = await parser.getText();
