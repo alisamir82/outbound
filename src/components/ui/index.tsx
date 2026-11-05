@@ -5,17 +5,19 @@ export function cn(...parts: (string | false | null | undefined)[]) {
   return parts.filter(Boolean).join(" ");
 }
 
-/** Brand mark: forest-green tile with an outbound paper plane. */
+/** Brand mark: forest-green tile with a two-tone folded paper plane and motion trail. */
 export function Logo({ size = 32, className }: { size?: number; className?: string }) {
   return (
-    <span
-      style={{ width: size, height: size }}
-      className={cn("inline-flex shrink-0 items-center justify-center rounded-xl bg-brand-700 text-white shadow-sm", className)}
-      aria-hidden
-    >
-      <svg width={size * 0.55} height={size * 0.55} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 2 11 13" />
-        <path d="M22 2 15 22l-4-9-9-4Z" />
+    <span style={{ width: size, height: size }} className={cn("inline-flex shrink-0 overflow-hidden rounded-xl shadow-sm", className)} aria-hidden>
+      <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+        <rect width="64" height="64" fill="#2a5a3c" />
+        {/* subtle corner light for depth */}
+        <path d="M64 0v64H0Z" fill="#ffffff" opacity="0.05" />
+        {/* motion trail */}
+        <path d="M9 56c8-6 14-11 20-17" stroke="#6aa87e" strokeWidth="3.5" strokeLinecap="round" strokeDasharray="0.5 7.5" />
+        {/* plane: wing facet (light) + body facet (white) */}
+        <path d="M56 8 8 29l18.5 7.5Z" fill="#b7d6c1" />
+        <path d="M56 8 26.5 36.5 31 54l8.5-10.5Z" fill="#ffffff" />
       </svg>
     </span>
   );
