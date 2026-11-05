@@ -8,6 +8,8 @@ import { Badge, Button, Card, PageHeader } from "@/components/ui";
 import { db, schema } from "@/db";
 import { requireClientScope } from "@/lib/session";
 
+export const metadata = { title: "Thread" };
+
 export default async function ThreadPage({ params }: PageProps<"/app/inbox/[id]">) {
   const { clientId } = await requireClientScope();
   const { id } = await params;

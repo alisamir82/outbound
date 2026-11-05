@@ -25,6 +25,12 @@ export function Shell({
       .toUpperCase() || "?";
   return (
     <div className="flex min-h-screen">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+      >
+        Skip to content
+      </a>
       <aside className="hidden w-64 shrink-0 flex-col bg-slate-900 p-4 md:flex">
         <div className="mb-6 flex items-center gap-3 px-1">
           <Logo size={36} />
@@ -66,7 +72,7 @@ export function Shell({
           <MobileNav items={nav} />
         </header>
         {banner}
-        <main className="mx-auto w-full max-w-6xl flex-1 p-4 md:p-8">{children}</main>
+        <main id="main" className="mx-auto w-full max-w-6xl flex-1 p-4 md:p-8">{children}</main>
       </div>
     </div>
   );

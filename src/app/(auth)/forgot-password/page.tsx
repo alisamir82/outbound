@@ -3,6 +3,8 @@ import { forgotPasswordAction } from "@/actions/auth";
 import { ActionForm } from "@/components/forms";
 import { Field, Input } from "@/components/ui";
 
+export const metadata = { title: "Forgot password" };
+
 export default function ForgotPasswordPage() {
   return (
     <>

@@ -3,6 +3,8 @@ import { ActionForm } from "@/components/forms";
 import { Card, Field, Input, PageHeader, Select } from "@/components/ui";
 import { getIntegration, INTEGRATIONS, type IntegrationKey } from "@/lib/settings";
 
+export const metadata = { title: "Integrations" };
+
 export default async function IntegrationsPage() {
   const keys = Object.keys(INTEGRATIONS) as IntegrationKey[];
   const configs = await Promise.all(keys.map((k) => getIntegration(k)));

@@ -4,6 +4,8 @@ import { LinkButton, PageHeader, Table } from "@/components/ui";
 import { db, schema } from "@/db";
 import { requireClientScope } from "@/lib/session";
 
+export const metadata = { title: "ICPs" };
+
 export default async function IcpsPage() {
   const { clientId } = await requireClientScope();
   const rows = await db

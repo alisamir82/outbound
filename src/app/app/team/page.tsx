@@ -5,6 +5,8 @@ import { UserTable } from "@/components/user-table";
 import { db, schema } from "@/db";
 import { requireClientScope } from "@/lib/session";
 
+export const metadata = { title: "Team" };
+
 export default async function TeamPage() {
   const { user, clientId, canManage } = await requireClientScope();
   const users = await db.query.users.findMany({ where: eq(schema.users.clientId, clientId), orderBy: asc(schema.users.createdAt) });

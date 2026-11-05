@@ -6,6 +6,8 @@ import { Card, Field, Input, PageHeader, Select } from "@/components/ui";
 import { db, schema } from "@/db";
 import { requireClientScope } from "@/lib/session";
 
+export const metadata = { title: "New campaign" };
+
 export default async function NewCampaignPage() {
   const { clientId } = await requireClientScope();
   const icps = await db.query.icps.findMany({ where: eq(schema.icps.clientId, clientId), orderBy: desc(schema.icps.createdAt) });

@@ -2,6 +2,8 @@ import { asc, gte, sql } from "drizzle-orm";
 import { PageHeader, Stat, Table } from "@/components/ui";
 import { db, schema } from "@/db";
 
+export const metadata = { title: "AI spend" };
+
 export default async function SpendPage() {
   const clients = await db.query.clients.findMany({ orderBy: asc(schema.clients.name) });
   const month = sql`date_trunc('month', now())`;

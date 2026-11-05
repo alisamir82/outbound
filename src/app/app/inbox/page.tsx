@@ -14,6 +14,8 @@ const FILTERS = [
 
 const TONE = { open: "zinc", awaiting_approval: "amber", escalated: "red", replied: "green", closed: "zinc", unsubscribed: "red" } as const;
 
+export const metadata = { title: "Inbox" };
+
 export default async function InboxPage({ searchParams }: PageProps<"/app/inbox">) {
   const { clientId } = await requireClientScope();
   const sp = await searchParams;

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Outbound",
+  title: { default: "AI Outbound", template: "%s · AI Outbound" },
   description: "AI outbound command centre",
 };
 

@@ -3,6 +3,8 @@ import { loginAction } from "@/actions/auth";
 import { ActionForm } from "@/components/forms";
 import { Field, Input } from "@/components/ui";
 
+export const metadata = { title: "Sign in" };
+
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const sp = await searchParams;
   const next = typeof sp.next === "string" ? sp.next : "/";

@@ -7,6 +7,8 @@ import { db, schema } from "@/db";
 import { SKILLS, type SkillKey } from "@/lib/ai/skills";
 import { requireClientScope } from "@/lib/session";
 
+export const metadata = { title: "AI skills" };
+
 export default async function SkillsPage() {
   const { clientId, canManage } = await requireClientScope();
   const overrides = await db.query.skillOverrides.findMany({ where: eq(schema.skillOverrides.clientId, clientId) });

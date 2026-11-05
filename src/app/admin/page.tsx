@@ -4,6 +4,8 @@ import Link from "next/link";
 import { db, schema } from "@/db";
 import { Card, PageHeader, Stat } from "@/components/ui";
 
+export const metadata = { title: "Overview" };
+
 export default async function AdminOverview() {
   const [[clientCount], [activeCount], [userCount], [leadCount], recent] = await Promise.all([
     db.select({ n: count() }).from(schema.clients),

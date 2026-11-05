@@ -5,6 +5,8 @@ import { UserTable } from "@/components/user-table";
 import { db, schema } from "@/db";
 import { requireRole } from "@/lib/session";
 
+export const metadata = { title: "Platform team" };
+
 export default async function PlatformTeamPage() {
   const admin = await requireRole("super_admin");
   const users = await db.query.users.findMany({ where: eq(schema.users.role, "super_admin"), orderBy: asc(schema.users.createdAt) });

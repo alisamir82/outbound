@@ -3,6 +3,8 @@ import { ActionForm } from "@/components/forms";
 import { Textarea } from "@/components/textarea";
 import { Card, Field, PageHeader } from "@/components/ui";
 
+export const metadata = { title: "New ICP" };
+
 export default function NewIcpPage() {
   return (
     <>

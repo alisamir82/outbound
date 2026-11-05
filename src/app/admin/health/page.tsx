@@ -7,6 +7,8 @@ import { db, schema } from "@/db";
 
 const TONE = { healthy: "green", warning: "amber", critical: "red", unknown: "zinc" } as const;
 
+export const metadata = { title: "Email health" };
+
 export default async function HealthPage() {
   const [accounts, clients, alerts] = await Promise.all([
     db.query.emailAccounts.findMany({ orderBy: asc(schema.emailAccounts.email) }),

@@ -6,6 +6,8 @@ import { Badge, LinkButton, PageHeader, Table } from "@/components/ui";
 
 const tone = { active: "green", onboarding: "amber", suspended: "red" } as const;
 
+export const metadata = { title: "Clients" };
+
 export default async function ClientsPage() {
   const rows = await db
     .select({

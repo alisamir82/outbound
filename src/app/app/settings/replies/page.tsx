@@ -11,6 +11,8 @@ import { requireClientScope } from "@/lib/session";
 const TIMEZONES = ["UTC", "Europe/London", "Europe/Paris", "Europe/Berlin", "Asia/Dubai", "Asia/Riyadh", "Asia/Singapore", "America/New_York", "America/Chicago", "America/Los_Angeles", "Australia/Sydney"];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+export const metadata = { title: "Reply settings" };
+
 export default async function ReplySettingsPage({ searchParams }: PageProps<"/app/settings/replies">) {
   const { clientId, canManage } = await requireClientScope();
   const sp = await searchParams;

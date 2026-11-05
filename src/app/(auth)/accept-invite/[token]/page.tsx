@@ -1,6 +1,8 @@
 import { tokenIsValid } from "@/actions/auth";
 import { SetPasswordForm } from "@/components/set-password-form";
 
+export const metadata = { title: "Accept invite" };
+
 export default async function AcceptInvitePage({ params }: PageProps<"/accept-invite/[token]">) {
   const { token } = await params;
   if (!(await tokenIsValid(token, "invite")))

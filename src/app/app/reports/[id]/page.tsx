@@ -9,6 +9,8 @@ import { requireClientScope } from "@/lib/session";
 const pct = (a: number, b: number) => (b ? `${((a / b) * 100).toFixed(1)}%` : "—");
 const delta = (a: number, b: number) => (b === 0 ? "" : ` (${a >= b ? "+" : ""}${(((a - b) / b) * 100).toFixed(0)}%)`);
 
+export const metadata = { title: "Report" };
+
 export default async function ReportPage({ params }: PageProps<"/app/reports/[id]">) {
   const { clientId, canManage } = await requireClientScope();
   const { id } = await params;

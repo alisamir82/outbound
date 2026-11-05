@@ -13,6 +13,8 @@ import { requireClientScope } from "@/lib/session";
 
 const TONE = { draft: "zinc", generating: "amber", review: "amber", approved: "green", pushing: "amber", pushed: "green", active: "green", paused: "zinc", failed: "red" } as const;
 
+export const metadata = { title: "Campaign" };
+
 export default async function CampaignPage({ params }: PageProps<"/app/campaigns/[id]">) {
   const { clientId, canManage } = await requireClientScope();
   const { id } = await params;

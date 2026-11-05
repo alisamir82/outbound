@@ -7,6 +7,8 @@ import { requireClientScope } from "@/lib/session";
 
 const STATUSES = ["all", "new", "approved", "pushed", "replied", "meeting", "rejected", "bounced", "unsubscribed"] as const;
 
+export const metadata = { title: "Leads" };
+
 export default async function LeadsPage({ searchParams }: PageProps<"/app/leads">) {
   const { clientId } = await requireClientScope();
   const sp = await searchParams;

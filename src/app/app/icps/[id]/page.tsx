@@ -10,6 +10,8 @@ import { requireClientScope } from "@/lib/session";
 
 const RUN_TONE = { queued: "zinc", sourcing: "amber", verifying: "amber", qualifying: "amber", review: "green", pushed: "green", failed: "red" } as const;
 
+export const metadata = { title: "ICP" };
+
 export default async function IcpDetailPage({ params }: PageProps<"/app/icps/[id]">) {
   const { clientId } = await requireClientScope();
   const { id } = await params;

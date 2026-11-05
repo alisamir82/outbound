@@ -49,7 +49,7 @@ export function LeadReviewTable({ leads, reviewable }: { leads: Lead[]; reviewab
               <tr key={l.id} className={l.status === "rejected" ? "opacity-50" : ""}>
                 {reviewable ? (
                   <td className="px-3 py-2">
-                    <input type="checkbox" name="leadId" value={l.id} />
+                    <input type="checkbox" name="leadId" value={l.id} aria-label={`Select ${l.firstName ?? ""} ${l.lastName ?? ""} (${l.email})`} />
                   </td>
                 ) : null}
                 <td className="px-3 py-2">

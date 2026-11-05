@@ -8,6 +8,8 @@ import { Card, PageHeader, Table } from "@/components/ui";
 import { db, schema } from "@/db";
 import { requireClientScope } from "@/lib/session";
 
+export const metadata = { title: "Reports" };
+
 export default async function ReportsPage() {
   const { clientId, canManage } = await requireClientScope();
   const [reports, proposals, campaigns] = await Promise.all([

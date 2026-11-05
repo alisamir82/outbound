@@ -7,6 +7,8 @@ import { Badge, Button, Card, Field, Input, PageHeader, Table } from "@/componen
 import { db, schema } from "@/db";
 import { requireClientScope } from "@/lib/session";
 
+export const metadata = { title: "Knowledge base" };
+
 export default async function KnowledgePage() {
   const { clientId, canManage } = await requireClientScope();
   const docs = await db.query.kbDocuments.findMany({ where: eq(schema.kbDocuments.clientId, clientId), orderBy: desc(schema.kbDocuments.createdAt) });

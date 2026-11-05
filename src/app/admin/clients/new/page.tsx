@@ -3,6 +3,8 @@ import { ClientFields } from "@/components/client-form";
 import { ActionForm } from "@/components/forms";
 import { Card, PageHeader } from "@/components/ui";
 
+export const metadata = { title: "New client" };
+
 export default function NewClientPage() {
   return (
     <>

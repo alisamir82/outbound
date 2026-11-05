@@ -169,7 +169,7 @@ export function MobileNav({ items }: { items: { href: string; label: string }[] 
           key={n.href}
           href={n.href}
           className={cn(
-            "whitespace-nowrap rounded-full px-3 py-1 transition-colors duration-150",
+            "flex min-h-9 items-center whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors duration-150",
             n.href === active ? "bg-brand-600 font-medium text-white" : "text-slate-300 hover:bg-white/10 hover:text-white",
           )}
         >

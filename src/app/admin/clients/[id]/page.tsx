@@ -10,6 +10,8 @@ import { UserTable } from "@/components/user-table";
 import { db, schema } from "@/db";
 import { requireRole } from "@/lib/session";
 
+export const metadata = { title: "Client" };
+
 export default async function ClientDetailPage({ params }: PageProps<"/admin/clients/[id]">) {
   const admin = await requireRole("super_admin");
   const { id } = await params;

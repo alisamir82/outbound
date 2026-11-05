@@ -11,6 +11,8 @@ import { requireClientScope } from "@/lib/session";
 
 const STAGES = ["queued", "sourcing", "verifying", "qualifying", "review"] as const;
 
+export const metadata = { title: "Lead run" };
+
 export default async function LeadRunPage({ params }: PageProps<"/app/leads/runs/[id]">) {
   const { clientId } = await requireClientScope();
   const { id } = await params;

@@ -6,6 +6,8 @@ import { Card, LinkButton, PageHeader, Stat } from "@/components/ui";
 import { db, schema } from "@/db";
 import { requireClientScope } from "@/lib/session";
 
+export const metadata = { title: "Dashboard" };
+
 export default async function ClientDashboard() {
   const { clientId } = await requireClientScope();
   const client = await db.query.clients.findFirst({ where: eq(schema.clients.id, clientId) });
