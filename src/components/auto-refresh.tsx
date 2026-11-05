@@ -11,5 +11,5 @@ export function AutoRefresh({ active, ms = 3000 }: { active: boolean; ms?: numbe
     const t = setInterval(() => router.refresh(), ms);
     return () => clearInterval(t);
   }, [active, ms, router]);
-  return active ? <p className="text-xs text-slate-500">Updating automatically…</p> : null;
+  return active ? <p className="text-xs text-stone-500">Updating automatically…</p> : null;
 }

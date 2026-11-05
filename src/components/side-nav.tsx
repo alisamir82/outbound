@@ -144,7 +144,7 @@ export function SideNav({ items }: { items: { href: string; label: string }[] })
             aria-current={isActive ? "page" : undefined}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-150",
-              isActive ? "bg-brand-600 font-medium text-white shadow-sm" : "text-slate-400 hover:bg-white/5 hover:text-white",
+              isActive ? "bg-brand-600 font-medium text-white shadow-sm" : "text-stone-400 hover:bg-white/5 hover:text-white",
             )}
           >
             <NavIcon label={n.label} />
@@ -170,7 +170,7 @@ export function MobileNav({ items }: { items: { href: string; label: string }[] 
           href={n.href}
           className={cn(
             "flex min-h-9 items-center whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors duration-150",
-            n.href === active ? "bg-brand-600 font-medium text-white" : "text-slate-300 hover:bg-white/10 hover:text-white",
+            n.href === active ? "bg-brand-600 font-medium text-white" : "text-stone-300 hover:bg-white/10 hover:text-white",
           )}
         >
           {n.label}

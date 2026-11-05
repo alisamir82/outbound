@@ -23,7 +23,7 @@ export default async function LeadsPage({ searchParams }: PageProps<"/app/leads"
       <PageHeader title="Leads" subtitle={`${leads.length} shown`} actions={<LinkButton href="/app/icps" variant="secondary">Start a lead run</LinkButton>} />
       <nav className="mb-4 flex flex-wrap gap-2 text-sm">
         {STATUSES.map((s) => (
-          <Link key={s} href={s === "all" ? "/app/leads" : `/app/leads?status=${s}`} className={`rounded-full px-3 py-1 transition-colors duration-150 ${status === s ? "bg-brand-600 font-medium text-white shadow-sm" : "bg-white text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 hover:text-slate-900"}`}>
+          <Link key={s} href={s === "all" ? "/app/leads" : `/app/leads?status=${s}`} className={`rounded-full px-3 py-1 transition-colors duration-150 ${status === s ? "bg-brand-600 font-medium text-white shadow-sm" : "bg-white text-stone-600 ring-1 ring-inset ring-stone-200 hover:bg-stone-50 hover:text-stone-900"}`}>
             {s}
           </Link>
         ))}

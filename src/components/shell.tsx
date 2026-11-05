@@ -31,12 +31,12 @@ export function Shell({
       >
         Skip to content
       </a>
-      <aside className="hidden w-64 shrink-0 flex-col bg-slate-900 p-4 md:flex">
+      <aside className="hidden w-64 shrink-0 flex-col bg-stone-900 p-4 md:flex">
         <div className="mb-6 flex items-center gap-3 px-1">
           <Logo size={36} />
           <div className="min-w-0">
             <p className="text-[15px] font-semibold tracking-tight text-white">AI Outbound</p>
-            <p className="truncate text-xs text-slate-400">{area}</p>
+            <p className="truncate text-xs text-stone-400">{area}</p>
           </div>
         </div>
         <SideNav items={nav} />
@@ -47,11 +47,11 @@ export function Shell({
             </span>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-white">{user.name}</p>
-              <p className="truncate text-xs text-slate-400">{user.email}</p>
+              <p className="truncate text-xs text-stone-400">{user.email}</p>
             </div>
           </div>
           <form action={logoutAction} className="mt-3">
-            <button className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-slate-400 transition-colors duration-150 hover:bg-white/5 hover:text-white">
+            <button className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-stone-400 transition-colors duration-150 hover:bg-white/5 hover:text-white">
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                 <polyline points="16 17 21 12 16 7" />
@@ -63,11 +63,11 @@ export function Shell({
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex flex-col gap-1 bg-slate-900 px-4 py-2 md:hidden">
+        <header className="flex flex-col gap-1 bg-stone-900 px-4 py-2 md:hidden">
           <div className="flex items-center gap-2.5">
             <Logo size={28} />
             <span className="font-semibold text-white">AI Outbound</span>
-            <span className="truncate text-xs text-slate-400">{area}</span>
+            <span className="truncate text-xs text-stone-400">{area}</span>
           </div>
           <MobileNav items={nav} />
         </header>
