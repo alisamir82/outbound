@@ -12,7 +12,9 @@ export type IntegrationKey =
   | "email_verification"
   | "instantly"
   | "anthropic"
-  | "apollo";
+  | "apollo"
+  | "google_calendar"
+  | "microsoft_calendar";
 
 export type IntegrationField = {
   name: string;
@@ -70,8 +72,24 @@ export const INTEGRATIONS: Record<IntegrationKey, { title: string; description: 
     description: "Agency account. Campaigns, leads and replies are synchronised via the v2 API and the hosted MCP server.",
     fields: [
       { name: "apiKey", label: "API key", type: "secret" },
-      { name: "webhookSecret", label: "Webhook secret", type: "secret", help: "Used to verify inbound webhooks." },
+      { name: "webhookSecret", label: "Webhook secret", type: "secret", help: "Append as ?secret=… to the webhook URL <APP_URL>/api/webhooks/instantly when creating webhooks in Instantly." },
       { name: "enabled", label: "Enabled", type: "boolean" },
+    ],
+  },
+  google_calendar: {
+    title: "Google Calendar (OAuth app)",
+    description: "Agency-level OAuth client used when clients connect a Google calendar. Redirect URI: <APP_URL>/api/calendar/google/callback",
+    fields: [
+      { name: "clientId", label: "OAuth client ID", type: "text" },
+      { name: "clientSecret", label: "OAuth client secret", type: "secret" },
+    ],
+  },
+  microsoft_calendar: {
+    title: "Microsoft 365 Calendar (OAuth app)",
+    description: "Azure app registration used when clients connect an Outlook calendar. Redirect URI: <APP_URL>/api/calendar/microsoft/callback",
+    fields: [
+      { name: "clientId", label: "Application (client) ID", type: "text" },
+      { name: "clientSecret", label: "Client secret", type: "secret" },
     ],
   },
   anthropic: {
@@ -99,6 +117,8 @@ export const INTEGRATION_DEFAULTS: Record<IntegrationKey, Record<string, unknown
   email_verification: { provider: "mock", acceptCatchAll: false },
   apollo: {},
   instantly: { enabled: false },
+  google_calendar: {},
+  microsoft_calendar: {},
   anthropic: { mode: "mock", defaultModel: "claude-opus-5-5", cheapModel: "claude-haiku-5-5" },
 };
 

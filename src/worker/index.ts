@@ -3,7 +3,10 @@ import { Worker, type Job } from "bullmq";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { processCampaignCopy, processCampaignPush } from "@/lib/pipeline/campaign";
+import { processWebhookEvent } from "@/lib/pipeline/inbox";
+import { processKbDocument } from "@/lib/pipeline/kb";
 import { processLeadRun } from "@/lib/pipeline/lead-run";
+import { processReplyAgent, sendDraft } from "@/lib/replies/service";
 import { getQueue, getRedis, QUEUES } from "@/lib/queue";
 
 /**
@@ -24,9 +27,13 @@ const processors: Record<string, Record<string, Processor>> = {
   },
   [QUEUES.agent]: {
     "campaign-copy": (job) => processCampaignCopy(job.data.campaignId),
+    reply: (job) => processReplyAgent(job.data.threadId, job.data.inboundMessageId),
+    "send-draft": (job) => sendDraft({ draftId: job.data.draftId, chosenSlotIndex: job.data.chosenSlotIndex, auto: job.data.auto }),
+    "kb-document": (job) => processKbDocument(job.data.documentId),
   },
   [QUEUES.instantly]: {
     "push-campaign": (job) => processCampaignPush(job.data.campaignId),
+    webhook: (job) => processWebhookEvent(job.data.eventId),
   },
   [QUEUES.reports]: {},
 };

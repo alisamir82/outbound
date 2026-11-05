@@ -14,6 +14,10 @@ export type JobPayloads = {
   "lead-runs/run": { leadRunId: string };
   "agent/campaign-copy": { campaignId: string };
   "instantly/push-campaign": { campaignId: string };
+  "instantly/webhook": { eventId: string };
+  "agent/reply": { threadId: string; inboundMessageId: string };
+  "agent/send-draft": { draftId: string; chosenSlotIndex: number | null; auto: boolean };
+  "agent/kb-document": { documentId: string };
   "system/heartbeat": Record<string, never>;
 };
 export type JobName = keyof JobPayloads;

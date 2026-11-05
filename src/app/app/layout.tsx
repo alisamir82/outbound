@@ -12,6 +12,9 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
     { href: "/app/icps", label: "ICPs" },
     { href: "/app/leads", label: "Leads" },
     { href: "/app/campaigns", label: "Campaigns" },
+    { href: "/app/inbox", label: "Inbox" },
+    { href: "/app/knowledge", label: "Knowledge base" },
+    { href: "/app/settings/replies", label: "Reply settings" },
     { href: "/app/settings/skills", label: "AI skills" },
     { href: "/app/team", label: "Team" },
   ];

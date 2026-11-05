@@ -22,6 +22,10 @@ export type InstantlySequenceStep = { subject: string; body: string; delayDays: 
 
 export interface InstantlyAdapter {
   readonly mode: "live" | "mock";
+  /** Reply inside an existing thread from the same sending account. */
+  sendReply(input: { emailAccount: string; replyToMessageId: string; subject: string; text: string }): Promise<{ id: string }>;
+  /** Best-effort: stop sequences for a lead that unsubscribed or bounced. */
+  stopLead(input: { email: string; campaignId: string | null }): Promise<void>;
   createCampaign(input: { name: string; steps: InstantlySequenceStep[]; timezone: string }): Promise<{ id: string }>;
   addLeads(campaignId: string, leads: InstantlyLead[]): Promise<{ added: number; skipped: number; errors: { email: string; error: string }[] }>;
   activateCampaign(campaignId: string): Promise<void>;
@@ -85,6 +89,24 @@ class LiveInstantly implements InstantlyAdapter {
   async activateCampaign(campaignId: string) {
     await this.call(`/campaigns/${campaignId}/activate`, {});
   }
+
+  async sendReply(input: { emailAccount: string; replyToMessageId: string; subject: string; text: string }) {
+    const out = await this.call<{ id: string }>("/emails/reply", {
+      eaccount: input.emailAccount,
+      reply_to_uuid: input.replyToMessageId,
+      subject: input.subject,
+      body: { text: input.text, html: input.text.replace(/\n/g, "<br>") },
+    });
+    return { id: out.id };
+  }
+
+  async stopLead(input: { email: string; campaignId: string | null }) {
+    try {
+      await this.call("/leads/update-interest-status", { lead_email: input.email, campaign_id: input.campaignId, interest_value: -3 });
+    } catch (e) {
+      console.warn("[instantly] stopLead failed:", (e as Error).message);
+    }
+  }
 }
 
 class MockInstantly implements InstantlyAdapter {
@@ -96,6 +118,10 @@ class MockInstantly implements InstantlyAdapter {
     return { added: leads.length, skipped: 0, errors: [] };
   }
   async activateCampaign() {}
+  async sendReply(input: { replyToMessageId: string }) {
+    return { id: `mock-reply-${input.replyToMessageId}-${Date.now()}` };
+  }
+  async stopLead() {}
 }
 
 export async function getInstantly(): Promise<InstantlyAdapter> {
