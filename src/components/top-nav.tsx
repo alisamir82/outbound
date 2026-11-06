@@ -126,7 +126,7 @@ function NavIcon({ label }: { label: string }) {
   );
 }
 
-export function SideNav({ items }: { items: { href: string; label: string }[] }) {
+export function TopNav({ items }: { items: { href: string; label: string }[] }) {
   const pathname = usePathname();
   // Active = the longest href that is the current path or one of its ancestors.
   const active = items.reduce<string | null>((best, n) => {
@@ -134,7 +134,7 @@ export function SideNav({ items }: { items: { href: string; label: string }[] })
     return match && (!best || n.href.length > best.length) ? n.href : best;
   }, null);
   return (
-    <nav className="flex flex-1 flex-col gap-0.5">
+    <nav aria-label="Primary" className="flex items-center gap-1 overflow-x-auto">
       {items.map((n) => {
         const isActive = n.href === active;
         return (
@@ -143,8 +143,8 @@ export function SideNav({ items }: { items: { href: string; label: string }[] })
             href={n.href}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-150",
-              isActive ? "bg-brand-600 font-medium text-white shadow-sm" : "text-stone-400 hover:bg-white/5 hover:text-white",
+              "flex min-h-9 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors duration-150",
+              isActive ? "bg-[#f7f5f0] font-medium text-brand-900 shadow-sm" : "text-brand-200 hover:bg-white/10 hover:text-white",
             )}
           >
             <NavIcon label={n.label} />
@@ -152,30 +152,6 @@ export function SideNav({ items }: { items: { href: string; label: string }[] })
           </Link>
         );
       })}
-    </nav>
-  );
-}
-
-export function MobileNav({ items }: { items: { href: string; label: string }[] }) {
-  const pathname = usePathname();
-  const active = items.reduce<string | null>((best, n) => {
-    const match = pathname === n.href || pathname.startsWith(n.href + "/");
-    return match && (!best || n.href.length > best.length) ? n.href : best;
-  }, null);
-  return (
-    <nav className="flex gap-1 overflow-x-auto py-1 text-sm">
-      {items.map((n) => (
-        <Link
-          key={n.href}
-          href={n.href}
-          className={cn(
-            "flex min-h-9 items-center whitespace-nowrap rounded-full px-3.5 py-1.5 transition-colors duration-150",
-            n.href === active ? "bg-brand-600 font-medium text-white" : "text-stone-300 hover:bg-white/10 hover:text-white",
-          )}
-        >
-          {n.label}
-        </Link>
-      ))}
     </nav>
   );
 }
