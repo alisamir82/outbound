@@ -35,6 +35,140 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* --- Motion & tactile controls ------------------------------------- */
+
+@keyframes sheen {
+  to {
+    transform: translateX(350%) skewX(-20deg);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Light streak that sweeps across a button on hover. */
+.btn-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.btn-sheen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  transform: translateX(-150%) skewX(-20deg);
+  pointer-events: none;
+}
+.btn-sheen:hover::after {
+  animation: sheen 0.7s ease;
+}
+
+/* Range slider: brand-filled track (--fill set by the Slider component). */
+input[type="range"].slider {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--color-brand-500) 0%,
+    var(--color-brand-600) var(--fill, 50%),
+    #e7e5e4 var(--fill, 50%)
+  );
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"].slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 2px solid var(--color-brand-600);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+input[type="range"].slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 6px rgb(51 111 73 / 0.15);
+}
+input[type="range"].slider:active::-webkit-slider-thumb {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 8px rgb(51 111 73 / 0.2);
+}
+input[type="range"].slider::-moz-range-thumb {
+  height: 18px;
+  width: 18px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 2px solid var(--color-brand-600);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+input[type="range"].slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 6px rgb(51 111 73 / 0.15);
+}
+input[type="range"].slider:focus-visible {
+  box-shadow: 0 0 0 3px rgb(51 111 73 / 0.25);
+}
+
+/* Custom checkbox: animated brand check. */
+input[type="checkbox"].checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 1.05rem;
+  width: 1.05rem;
+  flex-shrink: 0;
+  border-radius: 0.3rem;
+  border: 1.5px solid #d6d3d1;
+  background: #ffffff;
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  transition: background-color 150ms, border-color 150ms, box-shadow 150ms;
+}
+input[type="checkbox"].checkbox:hover {
+  border-color: var(--color-brand-500);
+  box-shadow: 0 0 0 3px rgb(51 111 73 / 0.12);
+}
+input[type="checkbox"].checkbox::before {
+  content: "";
+  height: 0.6rem;
+  width: 0.6rem;
+  transform: scale(0);
+  transition: transform 120ms ease-in-out;
+  background: #ffffff;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+input[type="checkbox"].checkbox:checked {
+  background: var(--color-brand-600);
+  border-color: var(--color-brand-600);
+}
+input[type="checkbox"].checkbox:checked::before {
+  transform: scale(1);
+}
+input[type="checkbox"].checkbox:focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

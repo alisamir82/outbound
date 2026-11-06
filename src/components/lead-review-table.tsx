@@ -35,7 +35,7 @@ export function LeadReviewTable({ leads, reviewable }: { leads: Lead[]; reviewab
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
             <tr>
-              {reviewable ? <th className="px-3 py-2"><input type="checkbox" aria-label="select all" onChange={(e) => document.querySelectorAll<HTMLInputElement>("input[name=leadId]").forEach((c) => (c.checked = e.target.checked))} /></th> : null}
+              {reviewable ? <th className="px-3 py-2"><input type="checkbox" className="checkbox" aria-label="select all" onChange={(e) => document.querySelectorAll<HTMLInputElement>("input[name=leadId]").forEach((c) => (c.checked = e.target.checked))} /></th> : null}
               <th className="px-3 py-2 font-medium">Lead</th>
               <th className="px-3 py-2 font-medium">Company</th>
               <th className="px-3 py-2 font-medium">Score</th>
@@ -49,7 +49,7 @@ export function LeadReviewTable({ leads, reviewable }: { leads: Lead[]; reviewab
               <tr key={l.id} className={l.status === "rejected" ? "opacity-50" : ""}>
                 {reviewable ? (
                   <td className="px-3 py-2">
-                    <input type="checkbox" name="leadId" value={l.id} aria-label={`Select ${l.firstName ?? ""} ${l.lastName ?? ""} (${l.email})`} />
+                    <input type="checkbox" className="checkbox" name="leadId" value={l.id} aria-label={`Select ${l.firstName ?? ""} ${l.lastName ?? ""} (${l.email})`} />
                   </td>
                 ) : null}
                 <td className="px-3 py-2">

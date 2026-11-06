@@ -2,8 +2,9 @@ import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { connectMockCalendarAction, disconnectCalendarAction, saveReplySettingsAction } from "@/actions/reply-settings";
 import { ActionForm } from "@/components/forms";
+import { Slider } from "@/components/slider";
 import { Textarea } from "@/components/textarea";
-import { Badge, Button, Card, Field, Input, LinkButton, PageHeader, Select } from "@/components/ui";
+import { Badge, Button, Card, Field, Input, LinkButton, PageHeader, Select, Switch } from "@/components/ui";
 import { db, schema } from "@/db";
 import { getIntegration } from "@/lib/settings";
 import { requireClientScope } from "@/lib/session";
@@ -50,19 +51,17 @@ export default async function ReplySettingsPage({ searchParams }: PageProps<"/ap
                   <Textarea name="signature" rows={2} defaultValue={rs.signature} placeholder="Dana Owner · Head of Growth, Acme" />
                 </Field>
                 <div className="grid gap-4 md:grid-cols-3">
-                  <Field label="Meeting length (min)">
-                    <Input name="meetingDurationMin" type="number" min={15} max={120} defaultValue={rs.meetingDurationMin} />
+                  <Field label="Meeting length">
+                    <Slider name="meetingDurationMin" min={15} max={120} step={5} defaultValue={rs.meetingDurationMin} suffix="m" labels={["15m", "2h"]} />
                   </Field>
-                  <Field label="Autonomous: min confidence %" help="Drafts below this are escalated instead of sent.">
-                    <Input name="minConfidence" type="number" min={50} max={100} defaultValue={Math.round(rs.minConfidence * 100)} />
+                  <Field label="Autonomous: min confidence" help="Drafts below this are escalated instead of sent.">
+                    <Slider name="minConfidence" min={50} max={100} defaultValue={Math.round(rs.minConfidence * 100)} suffix="%" labels={["cautious 50%", "strict 100%"]} />
                   </Field>
                   <Field label="Autonomous: max agent replies per thread">
-                    <Input name="maxAgentRepliesPerThread" type="number" min={1} max={10} defaultValue={rs.maxAgentRepliesPerThread} />
+                    <Slider name="maxAgentRepliesPerThread" min={1} max={10} defaultValue={rs.maxAgentRepliesPerThread} labels={["1", "10"]} />
                   </Field>
                 </div>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" name="businessHoursOnly" defaultChecked={rs.businessHoursOnly} /> Autonomous replies only during business hours (otherwise queued for the next opening)
-                </label>
+                <Switch name="businessHoursOnly" defaultChecked={rs.businessHoursOnly} label="Autonomous replies only during business hours" help="Outside those hours drafts are queued for the next opening." />
                 <div className="grid gap-4 md:grid-cols-3">
                   <Field label="Timezone">
                     <Select name="timezone" defaultValue={client.timezone}>
@@ -78,10 +77,13 @@ export default async function ReplySettingsPage({ searchParams }: PageProps<"/ap
                     <Input name="end" type="time" defaultValue={client.businessHours.end} />
                   </Field>
                 </div>
-                <div className="flex flex-wrap gap-3 text-sm">
+                <div className="flex flex-wrap gap-2">
                   {DAYS.map((d, i) => (
-                    <label key={d} className="flex items-center gap-1">
-                      <input type="checkbox" name="days" value={i} defaultChecked={client.businessHours.days.includes(i)} /> {d}
+                    <label key={d} className="cursor-pointer">
+                      <input type="checkbox" name="days" value={i} defaultChecked={client.businessHours.days.includes(i)} className="peer sr-only" />
+                      <span className="inline-flex min-h-8 items-center rounded-full border border-stone-300 bg-white px-3.5 text-sm text-stone-600 shadow-sm transition-all duration-150 hover:-translate-y-px hover:border-brand-400 hover:text-brand-700 peer-checked:border-brand-600 peer-checked:bg-brand-600 peer-checked:text-white peer-checked:shadow-md peer-checked:shadow-brand-600/25 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-600">
+                        {d}
+                      </span>
                     </label>
                   ))}
                 </div>

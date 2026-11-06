@@ -5,7 +5,8 @@ import { approveRunByScoreAction, deleteRejectedAction } from "@/actions/leads";
 import { AutoRefresh } from "@/components/auto-refresh";
 import { ActionForm } from "@/components/forms";
 import { LeadReviewTable } from "@/components/lead-review-table";
-import { Badge, Button, Card, Field, Input, PageHeader, Stat } from "@/components/ui";
+import { Slider } from "@/components/slider";
+import { Badge, Button, Card, Field, PageHeader, Stat } from "@/components/ui";
 import { db, schema } from "@/db";
 import { requireClientScope } from "@/lib/session";
 
@@ -65,9 +66,11 @@ export default async function LeadRunPage({ params }: PageProps<"/app/leads/runs
         <Card title="Bulk approve" className="mb-6">
           <div className="flex flex-wrap items-end gap-4">
             <ActionForm action={approveRunByScoreAction} submitLabel="Approve by score" hidden={{ leadRunId: run.id }} className="flex items-end gap-3">
-              <Field label="Minimum score">
-                <Input name="minScore" type="number" min={1} max={5} defaultValue={3} className="w-24" />
-              </Field>
+              <div className="w-56">
+                <Field label="Minimum score">
+                  <Slider name="minScore" min={1} max={5} defaultValue={3} labels={["1 · weak", "5 · perfect"]} />
+                </Field>
+              </div>
             </ActionForm>
             <form action={deleteRejectedAction.bind(null, run.id)}>
               <Button variant="secondary">Delete rejected leads</Button>

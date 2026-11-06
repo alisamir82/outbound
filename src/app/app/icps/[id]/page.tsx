@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { startLeadRunAction, updateIcpAction } from "@/actions/icps";
 import { ActionForm } from "@/components/forms";
+import { Slider } from "@/components/slider";
 import { Textarea } from "@/components/textarea";
 import { Badge, Card, Field, Input, PageHeader } from "@/components/ui";
 import { db, schema } from "@/db";
@@ -64,7 +65,7 @@ export default async function IcpDetailPage({ params }: PageProps<"/app/icps/[id
           <Card title="Source leads">
             <ActionForm action={startLeadRunAction} submitLabel="Start lead run" hidden={{ icpId: icp.id }}>
               <Field label="How many leads?" help="Sourced, verified and scored before you review them.">
-                <Input name="count" type="number" min={10} max={500} defaultValue={50} />
+                <Slider name="count" min={10} max={500} step={10} defaultValue={50} labels={["10", "500"]} />
               </Field>
             </ActionForm>
           </Card>

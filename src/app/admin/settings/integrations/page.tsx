@@ -1,6 +1,6 @@
 import { saveIntegrationAction } from "@/actions/settings";
 import { ActionForm } from "@/components/forms";
-import { Card, Field, Input, PageHeader, Select } from "@/components/ui";
+import { Card, Field, Input, PageHeader, Select, Switch } from "@/components/ui";
 import { getIntegration, INTEGRATIONS, type IntegrationKey } from "@/lib/settings";
 
 export const metadata = { title: "Integrations" };
@@ -35,12 +35,7 @@ export default async function IntegrationsPage() {
                           </Select>
                         </Field>
                       );
-                    if (f.type === "boolean")
-                      return (
-                        <label key={f.name} className="flex items-center gap-2 text-sm">
-                          <input type="checkbox" name={f.name} defaultChecked={Boolean(v)} /> {f.label}
-                        </label>
-                      );
+                    if (f.type === "boolean") return <Switch key={f.name} name={f.name} defaultChecked={Boolean(v)} label={f.label} />;
                     if (f.type === "secret")
                       return (
                         <Field key={f.name} label={f.label} help={cfg.hasSecrets.includes(f.name) ? `Set. Leave blank to keep, or type __clear__ to remove.${f.help ? " " + f.help : ""}` : f.help}>

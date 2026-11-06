@@ -25,15 +25,17 @@ export function Logo({ size = 32, className }: { size?: number; className?: stri
 
 export function Button({ className, variant = "primary", ...props }: ComponentProps<"button"> & { variant?: "primary" | "secondary" | "danger" | "ghost" }) {
   const styles = {
-    primary: "bg-brand-600 text-white shadow-sm hover:bg-brand-500 disabled:bg-stone-300 disabled:shadow-none",
-    secondary: "border border-stone-300 bg-white text-stone-800 shadow-sm hover:border-stone-400 hover:bg-stone-50",
-    danger: "bg-rose-600 text-white shadow-sm hover:bg-rose-500",
-    ghost: "text-stone-600 hover:bg-stone-100 hover:text-stone-900",
+    primary:
+      "btn-sheen bg-gradient-to-b from-brand-500 to-brand-700 text-white shadow-sm shadow-brand-900/25 hover:-translate-y-px hover:shadow-lg hover:shadow-brand-600/30 hover:brightness-110 active:translate-y-0 active:shadow-sm active:brightness-95 disabled:from-stone-300 disabled:to-stone-300 disabled:shadow-none",
+    secondary:
+      "border border-stone-300 bg-white text-stone-800 shadow-sm hover:-translate-y-px hover:border-brand-300 hover:text-brand-800 hover:shadow-md active:translate-y-0 active:shadow-sm",
+    danger: "btn-sheen bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-sm hover:-translate-y-px hover:shadow-lg hover:shadow-rose-500/30 active:translate-y-0",
+    ghost: "text-stone-600 hover:bg-stone-100 hover:text-stone-900 active:bg-stone-200",
   }[variant];
   return (
     <button
       className={cn(
-        "inline-flex h-9 cursor-pointer items-center justify-center rounded-lg px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed",
+        "inline-flex h-9 cursor-pointer items-center justify-center rounded-lg px-3.5 text-sm font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed",
         styles,
         className,
       )}
@@ -45,13 +47,13 @@ export function Button({ className, variant = "primary", ...props }: ComponentPr
 export function LinkButton({ className, href, children, variant = "primary" }: { className?: string; href: string; children: ReactNode; variant?: "primary" | "secondary" }) {
   const styles =
     variant === "primary"
-      ? "bg-brand-600 text-white shadow-sm hover:bg-brand-500"
-      : "border border-stone-300 bg-white text-stone-800 shadow-sm hover:border-stone-400 hover:bg-stone-50";
+      ? "btn-sheen bg-gradient-to-b from-brand-500 to-brand-700 text-white shadow-sm shadow-brand-900/25 hover:-translate-y-px hover:shadow-lg hover:shadow-brand-600/30 hover:brightness-110 active:translate-y-0"
+      : "border border-stone-300 bg-white text-stone-800 shadow-sm hover:-translate-y-px hover:border-brand-300 hover:text-brand-800 hover:shadow-md active:translate-y-0";
   return (
     <Link
       href={href}
       className={cn(
-        "inline-flex h-9 items-center rounded-lg px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
+        "inline-flex h-9 items-center rounded-lg px-3.5 text-sm font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600",
         styles,
         className,
       )}
@@ -65,7 +67,7 @@ export function Input({ className, ...props }: ComponentProps<"input">) {
   return (
     <input
       className={cn(
-        "h-9 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 shadow-sm outline-none transition-colors duration-150 placeholder:text-stone-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-stone-100",
+        "h-9 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm text-stone-900 shadow-sm outline-none transition-all duration-150 placeholder:text-stone-400 hover:border-stone-400 focus:border-brand-500 focus:shadow-md focus:shadow-brand-600/5 focus:ring-2 focus:ring-brand-100 disabled:bg-stone-100",
         className,
       )}
       {...props}
@@ -77,7 +79,7 @@ export function Select({ className, ...props }: ComponentProps<"select">) {
   return (
     <select
       className={cn(
-        "h-9 w-full cursor-pointer rounded-lg border border-stone-300 bg-white px-2 text-sm text-stone-900 shadow-sm outline-none transition-colors duration-150 focus:border-brand-500 focus:ring-2 focus:ring-brand-100",
+        "h-9 w-full cursor-pointer rounded-lg border border-stone-300 bg-white px-2 text-sm text-stone-900 shadow-sm outline-none transition-all duration-150 hover:border-stone-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-100",
         className,
       )}
       {...props}
@@ -97,7 +99,7 @@ export function Field({ label, help, children }: { label: string; help?: string;
 
 export function Card({ title, children, className, actions }: { title?: string; children: ReactNode; className?: string; actions?: ReactNode }) {
   return (
-    <section className={cn("rounded-xl border border-stone-200 bg-white shadow-sm", className)}>
+    <section className={cn("rounded-xl border border-stone-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md hover:shadow-stone-900/5", className)}>
       {title ? (
         <header className="flex items-center justify-between border-b border-stone-100 px-5 py-3.5">
           <h2 className="text-sm font-semibold text-stone-900">{title}</h2>
@@ -157,8 +159,8 @@ export function Badge({ children, tone = "zinc" }: { children: ReactNode; tone?:
 
 export function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-      <span className="absolute inset-y-0 left-0 w-1 rounded-r bg-brand-600" aria-hidden />
+    <div className="group relative overflow-hidden rounded-xl border border-stone-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md hover:shadow-brand-900/5">
+      <span className="absolute inset-y-0 left-0 w-1 rounded-r bg-gradient-to-b from-brand-500 to-brand-700 transition-all duration-200 group-hover:w-1.5" aria-hidden />
       <p className="pl-2 text-xs font-medium uppercase tracking-wider text-stone-500">{label}</p>
       <p className="mt-1 pl-2 text-2xl font-bold tracking-tight text-stone-900 tabular-nums">{value}</p>
     </div>
@@ -167,13 +169,33 @@ export function Stat({ label, value }: { label: string; value: string | number }
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div className="animate-fade-up mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-stone-900">{title}</h1>
         {subtitle ? <p className="mt-0.5 text-sm text-stone-500">{subtitle}</p> : null}
       </div>
       {actions}
     </div>
+  );
+}
+
+/** iOS-style toggle. A plain checkbox underneath, so it works in server-action forms. */
+export function Switch({ name, value, defaultChecked, label, help }: { name: string; value?: string; defaultChecked?: boolean; label: ReactNode; help?: string }) {
+  return (
+    <label className="group flex cursor-pointer items-start gap-3 text-sm text-stone-800">
+      <span className="relative mt-0.5 inline-flex shrink-0">
+        <input type="checkbox" name={name} value={value} defaultChecked={defaultChecked} className="peer sr-only" />
+        <span
+          className="h-5.5 w-10 rounded-full bg-stone-300 shadow-inner transition-colors duration-200 group-hover:bg-stone-400 peer-checked:bg-brand-600 peer-checked:group-hover:bg-brand-500 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-600"
+          aria-hidden
+        />
+        <span className="absolute left-0.5 top-0.5 h-4.5 w-4.5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out peer-checked:translate-x-[18px] group-active:scale-90" aria-hidden />
+      </span>
+      <span>
+        {label}
+        {help ? <span className="block text-xs text-stone-500">{help}</span> : null}
+      </span>
+    </label>
   );
 }
 

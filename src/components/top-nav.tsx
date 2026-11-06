@@ -120,7 +120,7 @@ const ICONS: Record<string, ReactNode> = {
 
 function NavIcon({ label }: { label: string }) {
   return (
-    <svg className="h-[18px] w-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 ease-out group-hover:-rotate-6 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       {ICONS[label] ?? <circle cx="12" cy="12" r="3" />}
     </svg>
   );
@@ -143,7 +143,7 @@ export function TopNav({ items }: { items: { href: string; label: string }[] }) 
             href={n.href}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex min-h-9 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors duration-150",
+              "group flex min-h-9 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-all duration-150 active:scale-[0.97]",
               isActive ? "bg-[#f7f5f0] font-medium text-brand-900 shadow-sm" : "text-brand-200 hover:bg-white/10 hover:text-white",
             )}
           >
